@@ -1,0 +1,44 @@
+--- released/hexgen/hexgen_core/heterogeneous_pipeline.py
++++ ported/hexgen/hexgen_core/heterogeneous_pipeline.py
+@@ -53,7 +53,7 @@
+         self.world_size = torch.distributed.get_world_size()
+         self.global_rank = torch.distributed.get_rank()
+         self.device_count = nproc_per_node if nproc_per_node is not None and nproc_per_node <= torch.cuda.device_count() else torch.cuda.device_count()
+-        self.local_rank = self.global_rank % self.device_count
++        self.local_rank = torch.cuda.current_device()
+         
+         self.pp_global_ranks = [i for i in range(self.world_size)] if process_group is None else sorted(list(set(list(process_group))))
+         assert(self.global_rank in self.pp_global_ranks)
+--- released/hexgen/llama/modules/Llamamodel_pipeline.py
++++ ported/hexgen/llama/modules/Llamamodel_pipeline.py
+@@ -32,6 +32,8 @@
+     dropout_add_rms_norm_parallel_residual = None
+ 
+ from collections import namedtuple, OrderedDict
++from einops import rearrange
++from flash_attn.utils.distributed import all_gather_raw
+ import sys
+ 
+ from arguments import get_kv_cache, set_kv_cache
+--- released/hexgen/hexgen_core/generation.py
++++ ported/hexgen/hexgen_core/generation.py
+@@ -134,7 +134,7 @@
+             if not cg:
+                 # logits = model(rearrange(next_token, 'b -> b 1'), position_ids=position_ids,
+                 #                inference_params=inference_params, last_token_only=True).logits
+-                dist.broadcast(rearrange(next_token, 'b -> b 1'), src=pp_last_stage_rank)
++                dist.broadcast(rearrange(next_token, 'b -> b 1'), src=pp_last_stage_rank, group=getattr(model, "replica_group", None))
+                 inputs = [[rearrange(next_token, 'b -> b 1')], [rearrange(next_token, 'b -> b 1')]]
+                 input_ids_shape = [[-1, 1, input_ids_shape[0][2]], [-1, 1], [-1, 1, input_ids_shape[0][2]]]
+                 logits = model.gpipe_forward(forward_step_func, inputs, input_ids_shape, position_ids=position_ids, inference_params=inference_params)[0]
+--- released/hexgen/llama/inference_phases.py
++++ ported/hexgen/llama/inference_phases.py
+@@ -180,7 +180,7 @@
+                                     dtype=torch.long).cuda()
+             if not cg:
+                 # TODO: REVISE THE BROADCAST PROCESS GROUP
+-                # dist.broadcast(rearrange(next_token, 'b -> b 1'), src=pp_last_stage_rank)
++                dist.broadcast(rearrange(next_token, 'b -> b 1'), src=pp_last_stage_rank, group=getattr(model, "replica_group", None))
+                 inputs = [[rearrange(next_token, 'b -> b 1')], [rearrange(next_token, 'b -> b 1')]]
+                 input_ids_shape = [[-1, 1, hidden_size], [-1, 1], [-1, 1, hidden_size]]
+                 logits = model.gpipe_forward(forward_step_func, inputs, input_ids_shape, position_ids=position_ids, inference_params=inference_params)[0]

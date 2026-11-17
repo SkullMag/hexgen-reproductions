@@ -1,0 +1,28 @@
+{
+  "qualified": true,
+  "status": {
+    "a40": 0,
+    "a30a": 0,
+    "a30b": 0
+  },
+  "direct_by_rank_and_direction": {
+    "0": {
+      "0->1": true,
+      "1->0": true,
+      "0->2": true,
+      "2->0": true
+    },
+    "1": {
+      "1->0": true,
+      "0->1": true,
+      "1->2": true,
+      "2->1": true
+    },
+    "2": {
+      "2->0": true,
+      "0->2": true,
+      "2->1": true,
+      "1->2": true
+    }
+  }
+}

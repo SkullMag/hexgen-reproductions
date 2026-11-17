@@ -1,0 +1,88 @@
+{
+  "inputs": {
+    "cases": "41c3cf5bf08cf5789dbd7f09807aa3f6deb1b1e50824b26c0a8e242ba6789182",
+    "reference": "f14bf5509b9dfb1eb43464cdc45624863369320f82448f0a706441f92c0c51c9",
+    "protocol": "e63269e846027c4d3a6274be0021c8597b5f7f67d9c3816bebc0267b6fdb6fd2",
+    "hphd-warmup": "d31f4d6ef5022706d154efb8fb07d243bdc60568d47fc91eed3d503be51001bf",
+    "lphd": "c6d18ec1ac6729c98d9a9abd9709dd6aad4de2280b19b1857a7c04f418b7ed7f"
+  },
+  "placement": {
+    "hexgen-opt": [
+      {
+        "id": 0,
+        "role": "all",
+        "stages": [
+          {
+            "ranks": [
+              0
+            ],
+            "start": 0,
+            "stop": 15
+          },
+          {
+            "ranks": [
+              1
+            ],
+            "start": 15,
+            "stop": 29
+          },
+          {
+            "ranks": [
+              2
+            ],
+            "start": 29,
+            "stop": 40
+          }
+        ]
+      }
+    ],
+    "hexgen2-opt": [
+      {
+        "id": 0,
+        "role": "prefill",
+        "stages": [
+          {
+            "ranks": [
+              0
+            ],
+            "start": 0,
+            "stop": 40
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "role": "decode",
+        "stages": [
+          {
+            "ranks": [
+              1
+            ],
+            "start": 0,
+            "stop": 20
+          },
+          {
+            "ranks": [
+              2
+            ],
+            "start": 20,
+            "stop": 40
+          }
+        ]
+      }
+    ]
+  },
+  "batch": 4,
+  "gdr_env": {
+    "NCCL_NET_GDR_LEVEL": "PHB",
+    "NCCL_NET_GDR_READ": "1",
+    "NCCL_CUMEM_ENABLE": "0",
+    "NCCL_CUMEM_HOST_ENABLE": "0",
+    "NCCL_IB_PCI_RELAXED_ORDERING": "0"
+  },
+  "source_manifest": "44498806b4ca7b428d14d8fac7e8b34ff270af14a73f5c762eb1d84361984662",
+  "launch_order": [
+    "hexgen-opt",
+    "hexgen2-opt"
+  ]
+}

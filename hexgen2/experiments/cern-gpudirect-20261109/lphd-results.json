@@ -1,0 +1,56 @@
+{
+  "pilot": true,
+  "rates": {
+    "hexgen-opt": {
+      "requests": 24,
+      "output_tokens": 4344,
+      "wall_seconds": 46.255663055,
+      "wall_output_tokens_per_second": 93.91282522174193,
+      "label": "cern-gdr-pilot-hexgen-opt-lphd",
+      "workload_sha256": "c6d18ec1ac6729c98d9a9abd9709dd6aad4de2280b19b1857a7c04f418b7ed7f"
+    },
+    "hexgen2-opt": {
+      "requests": 24,
+      "output_tokens": 4344,
+      "wall_seconds": 41.707329148,
+      "wall_output_tokens_per_second": 104.15435581082536,
+      "label": "cern-gdr-pilot-hexgen2-opt-lphd",
+      "workload_sha256": "c6d18ec1ac6729c98d9a9abd9709dd6aad4de2280b19b1857a7c04f418b7ed7f"
+    }
+  },
+  "gain": 0.10905358841991686,
+  "audit": {
+    "partition": "lphd",
+    "first_divergence_audited_requests": 2,
+    "material_deviations": [],
+    "eligible": true,
+    "workload_sha256": "c6d18ec1ac6729c98d9a9abd9709dd6aad4de2280b19b1857a7c04f418b7ed7f"
+  },
+  "median_decode_step_ms": {
+    "hexgen-opt": 41.630859,
+    "hexgen2-opt": 36.27539
+  },
+  "median_between_batches_seconds": {
+    "hexgen-opt": 0.246544922,
+    "hexgen2-opt": 0.402736329
+  },
+  "matched_host_staged_rates": {
+    "hexgen-opt": {
+      "requests": 24,
+      "output_tokens": 4344,
+      "wall_seconds": 46.205915116,
+      "wall_output_tokens_per_second": 94.01393715705842,
+      "label": "cern-fixed-quick-hexgen-opt-lphd",
+      "workload_sha256": "c6d18ec1ac6729c98d9a9abd9709dd6aad4de2280b19b1857a7c04f418b7ed7f"
+    },
+    "hexgen2-opt": {
+      "requests": 24,
+      "output_tokens": 4344,
+      "wall_seconds": 42.011444007,
+      "wall_output_tokens_per_second": 103.40039726499754,
+      "label": "cern-fixed-quick-hexgen2-opt-lphd",
+      "workload_sha256": "c6d18ec1ac6729c98d9a9abd9709dd6aad4de2280b19b1857a7c04f418b7ed7f"
+    }
+  },
+  "protocol_sha256": "d89db10f2f4fa833fd329227c15d18987bc217329ce1462d1ca20ef6db810f8b"
+}

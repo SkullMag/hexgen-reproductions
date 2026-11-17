@@ -1,0 +1,57 @@
+{
+  "pilot": true,
+  "rates": {
+    "hexgen-opt": {
+      "requests": 24,
+      "output_tokens": 8328,
+      "wall_seconds": 103.350833002,
+      "wall_output_tokens_per_second": 80.57990204915755,
+      "label": "cern-gdr-pilot-hexgen-opt-hphd",
+      "workload_sha256": "5808fe3d49c9ecba5a4cf273ec9a45025f5fc291693177efb2eab00fd8454940"
+    },
+    "hexgen2-opt": {
+      "requests": 24,
+      "output_tokens": 8328,
+      "wall_seconds": 93.322704879,
+      "wall_output_tokens_per_second": 89.23873360505235,
+      "label": "cern-gdr-pilot-hexgen2-opt-hphd",
+      "workload_sha256": "5808fe3d49c9ecba5a4cf273ec9a45025f5fc291693177efb2eab00fd8454940"
+    }
+  },
+  "gain": 0.1074564666337332,
+  "advance_to_confirmation": false,
+  "audit": {
+    "partition": "hphd",
+    "first_divergence_audited_requests": 1,
+    "material_deviations": [],
+    "eligible": true,
+    "workload_sha256": "5808fe3d49c9ecba5a4cf273ec9a45025f5fc291693177efb2eab00fd8454940"
+  },
+  "median_decode_step_ms": {
+    "hexgen-opt": 46.304687,
+    "hexgen2-opt": 40.3681645
+  },
+  "median_between_batches_seconds": {
+    "hexgen-opt": 1.1496875,
+    "hexgen2-opt": 1.415949218
+  },
+  "matched_host_staged_rates": {
+    "hexgen-opt": {
+      "requests": 24,
+      "output_tokens": 8328,
+      "wall_seconds": 103.158857576,
+      "wall_output_tokens_per_second": 80.72985874106381,
+      "label": "cern-fixed-quick-hexgen-opt-hphd",
+      "workload_sha256": "5808fe3d49c9ecba5a4cf273ec9a45025f5fc291693177efb2eab00fd8454940"
+    },
+    "hexgen2-opt": {
+      "requests": 24,
+      "output_tokens": 8328,
+      "wall_seconds": 104.383944516,
+      "wall_output_tokens_per_second": 79.78238452871918,
+      "label": "cern-fixed-quick-hexgen2-opt-hphd",
+      "workload_sha256": "5808fe3d49c9ecba5a4cf273ec9a45025f5fc291693177efb2eab00fd8454940"
+    }
+  },
+  "protocol_sha256": "e06b8dd8779c08eee3b94e49c5fc7ad1448ed07868c4ae70d29c113806ff83d8"
+}

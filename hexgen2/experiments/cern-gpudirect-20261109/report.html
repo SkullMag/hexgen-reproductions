@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HexGen‑2 on FABRIC · Scaled Figure 6 pilot</title>
+  <style>
+    body { color: #142133; background: #fff; font: 16px/1.55 system-ui, sans-serif; margin: 0; }
+    main { max-width: 54rem; margin: 2.5rem auto; padding: 0 1.25rem; }
+    h1 { font-size: clamp(1.75rem, 4vw, 2.4rem); line-height: 1.15; }
+    p { max-width: 76ch; }
+    figure { margin: 1.5rem 0; }
+    img { display: block; width: 100%; height: auto; }
+    table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+    th, td { padding: .45rem .6rem; text-align: right; border-bottom: 1px solid #dce5ed; }
+    th:first-child { text-align: left; }
+    thead th { background: #eef4f9; }
+    caption { text-align: left; font-size: .9rem; margin-bottom: .4rem; color: #42566c; }
+    a { color: #105687; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>HexGen‑2 on FABRIC</h1>
+  <p><strong>HexGen‑2 improved offline throughput by 6.37–10.91% across four workload pilots.</strong> We ran the native OpenLLaMA‑13B FP16 paths on the same CERN fleet (1 A40 and 2 A30s) with GPUDirect RDMA. Each system used its released optimizer’s HPHD placement across all workloads. Each workload used one matched 24-request queue, and all four output audits passed.</p>
+  <figure>
+    <img src="cern-gdr-four-workloads-throughput.png" width="1785" height="962" alt="Paired throughput bars for HexGen and HexGen-2. HexGen-2 led on HPLD, HPHD, LPHD, and LPLD. Exact values are in the table below.">
+  </figure>
+  <table>
+    <caption>Throughput in generated tokens per second. Paper gains are estimated from the Hetero‑4 bars.</caption>
+    <thead><tr><th scope="col">Workload</th><th scope="col">HexGen</th><th scope="col">HexGen‑2</th><th scope="col">CERN gain</th><th scope="col">Figure 6 gain</th></tr></thead>
+    <tbody>
+      <tr><th scope="row"><a href="hpld-results.json">HPLD</a></th><td>64.66</td><td>68.78</td><td>+6.37%</td><td>~+35%</td></tr>
+      <tr><th scope="row"><a href="results.json">HPHD</a></th><td>80.58</td><td>89.24</td><td>+10.75%</td><td>~+29%</td></tr>
+      <tr><th scope="row"><a href="lphd-results.json">LPHD</a></th><td>93.91</td><td>104.15</td><td>+10.91%</td><td>~+25%</td></tr>
+      <tr><th scope="row"><a href="lpld-results.json">LPLD</a></th><td>86.30</td><td>94.21</td><td>+9.16%</td><td>~+40%</td></tr>
+    </tbody>
+  </table>
+  <p>The pilots agree with Figure 6 on which system was faster. The paper’s Hetero‑4 gains were larger on Llama‑2 70B with 3 H100s and 9 A100s. With one queue per workload, repeatability under GPUDirect remains open. <a href="https://arxiv.org/pdf/2502.07903#page=8">HexGen‑2, Figure 6</a></p>
+</main>
+</body>
+</html>

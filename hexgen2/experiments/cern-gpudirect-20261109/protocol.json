@@ -1,0 +1,111 @@
+{
+  "frozen_utc": "2026-11-08T20:15:30.138038+00:00",
+  "checkpoint": "openlm-research/open_llama_13b@b6d7fde8392250730d24cc2fcfa3b7e5f9a03ce8",
+  "precision": "FP16",
+  "batch": 4,
+  "max_context_tokens": 1536,
+  "seed": 2026110805,
+  "trace_sha256": "2f1e5b666d4e3055fdbba98598ce2ec307767b9064e03e2fa46676dbcc7d0bf8",
+  "workload": "Azure Conversation HPHD shapes, >512 prompt, >128 generated, total <=1536. One distinct shape on each side of 1024 prompt tokens per queue. Seeded synthetic prompt IDs. Same order and output lengths for all arms and configurations.",
+  "selection": "Calibration separated from six held-out queues. Select the strongest qualified native baseline and eligible unchanged-optimizer plan before held-out measurements. Keep diagnostic plans and failed qualifications separate.",
+  "order": {
+    "hphd-1": "hexgen2",
+    "hphd-2": "hexgen",
+    "hphd-3": "hexgen",
+    "hphd-4": "hexgen",
+    "hphd-5": "hexgen2",
+    "hphd-6": "hexgen2"
+  },
+  "metric": "Generated tokens divided by full-drain wall time; paired log throughput ratios with a paired interval across the six queues.",
+  "cpu_gate": "Reject runs with sustained guest CPU contention. Require mean busy share <=85% and CPU pressure stall fraction <=5% for the timed interval on the RTX guest.",
+  "partitions": {
+    "hphd-1": [
+      [
+        1014,
+        375
+      ],
+      [
+        1351,
+        165
+      ]
+    ],
+    "hphd-2": [
+      [
+        966,
+        498
+      ],
+      [
+        1032,
+        411
+      ]
+    ],
+    "hphd-3": [
+      [
+        1014,
+        428
+      ],
+      [
+        1085,
+        363
+      ]
+    ],
+    "hphd-4": [
+      [
+        1013,
+        420
+      ],
+      [
+        1052,
+        378
+      ]
+    ],
+    "hphd-5": [
+      [
+        1007,
+        441
+      ],
+      [
+        1040,
+        420
+      ]
+    ],
+    "hphd-6": [
+      [
+        989,
+        396
+      ],
+      [
+        1077,
+        414
+      ]
+    ],
+    "hphd-calibration": [
+      [
+        989,
+        426
+      ],
+      [
+        1073,
+        365
+      ]
+    ],
+    "hphd-warmup": [
+      [
+        1323,
+        213
+      ]
+    ]
+  },
+  "files": {
+    "hphd-1": "955241d1e1c8fb28891e3cd0926b5d2c7c7fe8c3e2577220dd688cbc99ad49bd",
+    "hphd-2": "7027ff62ca19810eac343770d9c40a6a3e7db78c757328585b2802c704e34b6b",
+    "hphd-3": "8a60bfa430d27b8abf91bea053ccfb286690f073cf78988380c7147e2d0d0112",
+    "hphd-4": "97fc0ebac997fc959efdbf56c944d07861b8242fc5bd915a3c7aed98cb643c4c",
+    "hphd-5": "19c39e07b4a8f66916524e80c7b46031589c5888249bc7613ddb7db28eb1564c",
+    "hphd-6": "ce140f1279243d2ab53f5b6406bd3f04bdb0fd3284c3f1f4b96f84c506160e61",
+    "hphd-calibration": "126fcd145569785d3dd274c915ecc35ef5f4bfb634e60f2346750f572801855b",
+    "hphd-warmup": "34961fa4c915db68c91e7177c9eac910f61c08fc81c0594e05f5e88bc82d3e31",
+    "cases": "41c3cf5bf08cf5789dbd7f09807aa3f6deb1b1e50824b26c0a8e242ba6789182",
+    "reference": "f14bf5509b9dfb1eb43464cdc45624863369320f82448f0a706441f92c0c51c9"
+  }
+}
