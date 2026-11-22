@@ -27,6 +27,16 @@ Use WildGPT, OpenThoughts, OpenR1-Math, and NuminaMath. Use the authors' samples
 
 The fallback load sweep is `0.50`, `0.85`, `1.00`, `1.10`, and `1.40` times the pilot estimate of sustainable HexGen-2 requests per second for each workload. Use three independent replay seeds per cell and share each seed across arms. Alternate the order of the systems across pairs. The fallback matrix has 2 systems × 4 workloads × 5 rates × 3 seeds = 120 runs, excluding qualification and pilots.
 
+## Qwen qualification and replay code
+
+The Qwen port uses Transformers 4.51.3 Qwen2-MoE layers with PyTorch 2.5.1 SDPA and the HexGen-2 reproduction's stage and cache-transfer adapter. Report this implementation choice with the results. The three-rank qualification module is [`hexgen2.qualify_qwen`](../../../hexgen2/source/hexgen2/qualify_qwen.py). It checks the generated tokens from a full prefill on rank 0 and transferred-cache decode on ranks 1 and 2 against colocated generation. The [four-rank online worker](../../../hexgen2/source/hexgen2/comparison_worker.py) loads the Qwen port when the checkpoint declares `qwen2_moe`. Its current prefill and decode replicas each use two pipeline stages.
+
+Set `PYTHONPATH=hexgen2/source` from the repository root for these modules. Stage the pinned checkpoint on each worker with `hexgen2.fetch_model`. The qualification module takes `--model-dir`, `--trace`, and `--output`; run one process per rank with a shared rendezvous address and port. Each trace row contains `id`, `input_ids`, and `max_new_tokens`. The CUDA path uses NCCL and the rank-local device selected by `LOCAL_RANK`.
+
+The [replay client](../../../hexgen2/source/hexgen2/comparison_client.py) takes `--request-format hexgen2` for the baseline and `--request-format sglang` for the HexGen-3 load balancer. In online mode, create and save a schedule with `--poisson-rate` and `--arrival-seed`, then give the other arm the saved `arrivals.json` through `--arrivals` with the same trace and duration. Set the client in-flight limit high enough to avoid throttling the open-loop schedule. Use the trace and arrival hashes in each summary to check the pair, and retain the recorded submission lag.
+
+## Analysis
+
 - **Throughput.** Measure completed requests per second during the steady window. Use the highest sustainable measured rate per workload for the throughput panel when paper settings are unavailable. Record completion rate, failures, and queue growth to identify overload. If either system stays stable at the highest offered rate, extend the sweep for both arms to bracket saturation.
 - **P99 latency.** Measure from client submission to the final token at the same absolute offered rate for both arms. Use the paper's operating point if available, or the `0.85` point as the primary comparison. Report the full load sweep and error and timeout counts alongside the paired P99 values.
 - **Cost.** Report raw throughput and latency, plus paired percentage differences. Add the paper's cost axes when its normalization and a common GPU rate are established. Use completed requests per second × 3600 ÷ hourly GPU cost for requests per dollar.
@@ -35,4 +45,4 @@ The fallback load sweep is `0.50`, `0.85`, `1.00`, `1.10`, and `1.40` times the 
 
 Commit the tested launchers and resolved run configuration before collecting results. Record both runtime commit IDs, model and tokenizer revision, dependency versions, ranks and placements, dataset revisions, workload hashes, arrival seeds and rates, generation settings, warmup and measurement windows, and the criteria for identifying stable runs. Keep a per-run request log with request ID, submission and completion timestamps, token counts, status, and run configuration ID. Publish the aggregate table, paired plots, and the reporting command with the measured commit ID. Keep credentials, model weights, and large telemetry outside Git.
 
-The experiment is at the protocol stage. A Qwen-capable HexGen-2 build, the FABRIC staging helpers, and both qualified live runs are pending.
+Local checks passed for BF16 staged logits against a full Qwen2-MoE fixture, exact token parity across three CPU Gloo ranks after transferring the cache, and paired replay against mock HTTP endpoints. Full-checkpoint CUDA qualification and the measured FABRIC comparison are pending.

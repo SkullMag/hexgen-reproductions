@@ -18,7 +18,7 @@ from .comparison_fence import LaunchFence
 from .nccl_runtime import runtime_version,mapped_libraries
 
 
-def fingerprints(tensors):return {k:hashlib.sha256(t.detach().cpu().numpy().tobytes()).hexdigest() for k,t in tensors.items()}
+def fingerprints(tensors):return {k:hashlib.sha256(t.detach().reshape(-1).view(torch.uint8).cpu().numpy().tobytes()).hexdigest() for k,t in tensors.items()}
 
 def stamp():return {'utc_ns':time.time_ns(),'monotonic_ns':time.monotonic_ns()}
 
@@ -47,7 +47,7 @@ class Service:
             # One sender owns and reuses this workspace. Avoid CUDA host-memory
             # registration while another request has active pipeline kernels.
             elements=(model.stop-model.start)*args.max_batch*model.hf.max_position_embeddings*2*model.hf.num_key_value_heads*(model.hf.hidden_size//model.hf.num_attention_heads)
-            self.host_staging_cache=torch.empty(elements,dtype=torch.float16,pin_memory=True)
+            self.host_staging_cache=torch.empty(elements,dtype=model.dtype,pin_memory=True)
             self.host_staging_first=torch.empty(args.max_batch,dtype=torch.int64,pin_memory=True)
         if args.audit:
             model.audit_directory=args.output/f'audit-rank-{self.rank}';model.audit_directory.mkdir(exist_ok=False)
@@ -134,10 +134,10 @@ class Service:
                 staging_ms=0.
                 if self.args.kv_transport=='gloo':
                     # Retain GPU sources through the asynchronous copies. Network
-                    # transport receives only exact, initialized FP16 CPU bytes.
+                    # transport receives only exact, initialized CPU bytes.
                     payload={};offset=0
                     for key,tensor in tensors.items():
-                        if tensor.dtype==torch.float16:
+                        if tensor.dtype==self.model.dtype:
                             end=offset+tensor.numel()
                             if end>self.host_staging_cache.numel():raise ValueError('CPU staging capacity exceeded')
                             host=self.host_staging_cache[offset:end].view(tensor.shape);offset=end
@@ -363,8 +363,20 @@ def main():
     readiness=[dist.new_group(r,backend='gloo',timeout=timedelta(seconds=1800)) for r in [[0,2],[1,3]]]
     ordering=dist.new_group([0,1,2,3],backend='gloo',timeout=timedelta(seconds=1800))
     final=dist.new_group([0,1,2,3],backend='gloo',timeout=timedelta(seconds=1800))
-    model=NativeStage(args.model_dir,rank%2,args.method,args.baseline_root,max_batch=args.max_batch)
-    identity={'rank':rank,'method':args.method,'stage':rank%2,'config':digest(Path(args.model_dir)/'config.json'),'origin':digest(Path(args.model_dir)/'verified-source.json')}
+    model_dir = Path(args.model_dir)
+    model_config = json.loads((model_dir / 'config.json').read_text())
+    if model_config.get('model_type') == 'qwen2_moe':
+        if args.method != 'hexgen2':
+            raise ValueError('The Qwen adapter is available for HexGen-2')
+        from .qwen_stage import QwenStage
+        layers = model_config['num_hidden_layers']
+        start, stop = (0, layers // 2) if rank % 2 == 0 else (layers // 2, layers)
+        model = QwenStage(model_dir, start, stop, max_batch=args.max_batch, device=f'cuda:{device}')
+        source_name = 'download-source.json'
+    else:
+        model=NativeStage(args.model_dir,rank%2,args.method,args.baseline_root,max_batch=args.max_batch)
+        source_name = 'verified-source.json'
+    identity={'rank':rank,'method':args.method,'stage':rank%2,'config':digest(model_dir/'config.json'),'origin':digest(model_dir/source_name)}
     identities=[None]*4;dist.all_gather_object(identities,identity,group=final)
     if any(i['method']!=args.method or i['config']!=identity['config'] or i['origin']!=identity['origin'] for i in identities):raise ValueError('Worker model/method identity mismatch')
     args.output=Path(args.output);service=Service(args,model,pairs[rank//2],controls[rank//2],links[rank%2],readiness[rank%2],ordering)
