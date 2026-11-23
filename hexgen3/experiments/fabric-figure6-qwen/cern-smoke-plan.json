@@ -1,0 +1,65 @@
+{
+  "description": "Three-rank HexGen-2 BF16 Qwen qualification at CERN. Rank 0 runs prefill and the colocated reference. Ranks 1 and 2 decode layers 0–11 and 12–23 respectively.",
+  "nodes": [
+    {
+      "name": "prefill",
+      "site": "CERN",
+      "host": "cern-w1.fabric-testbed.net",
+      "image": "docker_ubuntu_22",
+      "instance_type": "fabric.c8.m64.d100",
+      "components": [
+        {
+          "name": "gpu",
+          "model": "GPU_A40"
+        }
+      ]
+    },
+    {
+      "name": "decode-1",
+      "site": "CERN",
+      "host": "cern-w3.fabric-testbed.net",
+      "image": "docker_ubuntu_22",
+      "instance_type": "fabric.c8.m64.d100",
+      "components": [
+        {
+          "name": "gpu",
+          "model": "GPU_A30"
+        }
+      ]
+    },
+    {
+      "name": "decode-2",
+      "site": "CERN",
+      "host": "cern-w6.fabric-testbed.net",
+      "image": "docker_ubuntu_22",
+      "instance_type": "fabric.c8.m64.d100",
+      "components": [
+        {
+          "name": "gpu",
+          "model": "GPU_A30"
+        }
+      ]
+    }
+  ],
+  "networks": [
+    {
+      "name": "qwen-data",
+      "type": "L2Bridge",
+      "subnet": "10.86.6.0/24",
+      "members": [
+        {
+          "node": "prefill",
+          "address": "10.86.6.11"
+        },
+        {
+          "node": "decode-1",
+          "address": "10.86.6.12"
+        },
+        {
+          "node": "decode-2",
+          "address": "10.86.6.13"
+        }
+      ]
+    }
+  ]
+}
