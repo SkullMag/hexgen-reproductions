@@ -15,6 +15,8 @@ parser.add_argument("--cpu", required=True)
 parser.add_argument("--pilot-runtime")
 parser.add_argument("--limit", type=int)
 parser.add_argument("--from-index", type=int, default=0)
+parser.add_argument("--request-timeout", type=int, default=450)
+parser.add_argument("--drain-timeout", type=int, default=460)
 args = parser.parse_args()
 plan = json.loads(args.plan.read_text())
 args.output.mkdir(parents=True, exist_ok=True)
@@ -54,7 +56,8 @@ for index, pair in enumerate(plan[start_index:end_index], start=start_index):
         replay = (
             'cd "$HOME/openr1-controller"; '
             f"bash replay-openr1.sh {method} {run} online --duration {pair['duration']} "
-            f"--arrivals schedules/{run}.json --request-timeout 450 --drain-timeout 460"
+            f"--arrivals schedules/{run}.json --request-timeout {args.request_timeout} "
+            f"--drain-timeout {args.drain_timeout}"
         )
         result = invoke(["bash", args.cpu, replay], check=False)
         with (args.output / f"{run}-{method}.tgz").open("wb") as archive:
