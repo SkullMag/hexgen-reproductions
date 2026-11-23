@@ -33,16 +33,19 @@ On each GPU node place the released HexGen-3 checkout in `~/hexgen3-openr1` and 
 
 ```bash
 bash switch-openr1.sh "$gpu_ssh" "$cpu_ssh" start hexgen2 h2-openr1-calibration 29667
+.venv/bin/python freeze-seed-traces.py workload/measured.jsonl
 bash replay-openr1.sh hexgen2 h2-opening-warmup finite --request-timeout 100
 bash replay-openr1.sh hexgen2 h2-openr1-calibration offline --duration 205
 PYTHONPATH=hexgen2/source .venv/bin/python freeze-schedules.py \
   runs/h2-openr1-calibration/hexgen2/summary.json schedules
-python3 run-matrix.py plan.json captures --switch switch-openr1.sh \
-  --gpu "$gpu_ssh" --cpu "$cpu_ssh" --pilot-runtime h2-openr1-calibration
-python3 analyze-openr1.py plan.json captures analysis
+bash switch-openr1.sh "$gpu_ssh" "$cpu_ssh" stop hexgen2 h2-openr1-calibration
+python3 run-matrix.py schedules/plan.json captures --switch switch-openr1.sh \
+  --gpu "$gpu_ssh" --cpu "$cpu_ssh"
+python3 analyze-openr1.py schedules/plan.json captures analysis
+python3 plot-openr1.py analysis/rate-summary.csv analysis/openr1-figure6.png
 ```
 
-The middle four lines starting with `bash replay-openr1.sh` run from the CPU node's experiment directory. Copy `schedules/plan.json` to the controller that holds the SSH wrappers before running the matrix. The runner reuses a drained runtime when the same method ends one pair and starts the next. A fresh runtime receives the three frozen warmup requests before measurement starts.
+Run the replay and trace-freezing commands in the CPU node's experiment directory. Copy the complete `schedules/` directory to the controller that holds the SSH wrappers before running the matrix. The runner reuses a drained runtime when the same method ends one pair and starts the next. A fresh runtime receives the three frozen warmup requests before measurement starts.
 
 All online pairs use the same trace, arrival offsets, duration, request IDs, and client clock. The analysis rejects any mismatch. The throughput metric is completed requests divided by the fixed window duration. P99 is nearest-rank elapsed time from HTTP submission to the final token, over successes including the drain. Report successes, failures, and tail sample counts alongside P99. The physical pool was held fixed across arms, so relative requests per cost use the ratio of measured requests per second at the compared operating points.
 
@@ -50,4 +53,4 @@ All online pairs use the same trace, arrival offsets, duration, request IDs, and
 
 The four-request calibration queue ran for a 205-second measurement window. The first three successful completions arrived at 68.685, 137.273, and 205.515 seconds. Two requests timed out during the drain. The calibration uses the median 68.415-second gap between those three completions, which estimates 0.01462 requests per second while the decoder stays busy. The [calibration record](schedules/calibration.json) retains the fixed-window estimate as well. The controller stopped that runtime and started a fresh HexGen-2 instance before the first measured pair.
 
-Seeds 61, 305, and 997 each cover five offered loads. The primary 0.85× load has 480-second windows and the other rates have 240-second windows. The [replay manifest](schedules/plan.json) records every requested rate, duration, offered count, and arm order. Each arm has the same 450-second HTTP request timeout and 460-second drain allowance. Small request counts constrain the resolution of empirical P99.
+Seeds 61, 305, and 997 each cover five offered loads with disjoint segments of the frozen measured trace. The [seed manifest](seed-traces.json) records the ranges and hashes. The primary 0.85× load has 480-second windows and the other rates have 240-second windows. The [replay manifest](schedules/plan.json) records every requested rate, duration, offered count, and arm order. Each arm has the same 450-second HTTP request timeout and 460-second drain allowance. Small request counts constrain the resolution of empirical P99.
