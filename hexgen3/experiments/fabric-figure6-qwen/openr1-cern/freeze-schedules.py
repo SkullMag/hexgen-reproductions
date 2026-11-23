@@ -13,8 +13,15 @@ parser.add_argument("--primary-duration", type=int, default=480)
 args = parser.parse_args()
 pilot = json.loads(args.pilot.read_text())
 capacity = pilot["throughput_requests_per_second"]
-if pilot["failures"] or not pilot["capture_complete"] or not capacity:
+if not pilot["capture_complete"] or not capacity:
     raise SystemExit("The baseline pilot did not establish a rate")
+if pilot["failures"]:
+    requests = [json.loads(line) for line in args.pilot.with_name("requests.jsonl").read_text().splitlines()]
+    failures = [row for row in requests if not row["success"]]
+    if len(failures) != pilot["failures"] or any(
+        row.get("error_type") != "TimeoutError" or row["within_measurement_window"] for row in failures
+    ):
+        raise SystemExit("A baseline pilot failure affected the measurement window")
 
 args.output.mkdir(parents=True, exist_ok=False)
 plan = []
