@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("pilot", type=Path)
 parser.add_argument("output", type=Path)
 parser.add_argument("--duration", type=int, default=240)
+parser.add_argument("--primary-duration", type=int, default=480)
 args = parser.parse_args()
 pilot = json.loads(args.pilot.read_text())
 capacity = pilot["throughput_requests_per_second"]
@@ -21,7 +22,8 @@ for seed in (61, 305, 997):
     for multiplier in (0.85, 0.50, 1.00, 1.10, 1.40):
         rate = round(capacity * multiplier, 8)
         run = f"openr1-r{round(multiplier * 100):03}-s{seed:03}"
-        schedule = poisson_arrivals(rate, args.duration, seed)
+        duration = args.primary_duration if multiplier == 0.85 else args.duration
+        schedule = poisson_arrivals(rate, duration, seed)
         if len(schedule["offsets_s"]) > 480:
             raise SystemExit(f"{run} needs more than 480 request rows")
         (args.output / f"{run}.json").write_text(json.dumps(schedule, indent=2) + "\n")
@@ -31,7 +33,7 @@ for seed in (61, 305, 997):
             "rate": rate,
             "multiplier": multiplier,
             "seed": seed,
-            "duration": args.duration,
+            "duration": duration,
             "offered": len(schedule["offsets_s"]),
             "order": order,
         })

@@ -38,7 +38,6 @@ end_index = start_index + args.limit if args.limit is not None else len(plan)
 active = ("hexgen2", args.pilot_runtime) if args.pilot_runtime else None
 for index, pair in enumerate(plan[start_index:end_index], start=start_index):
     run = pair["run"]
-    pair_failed = False
     for method in pair["order"]:
         control = ["bash", args.switch, args.gpu, args.cpu]
         if not active or active[0] != method:
@@ -55,14 +54,15 @@ for index, pair in enumerate(plan[start_index:end_index], start=start_index):
         replay = (
             'cd "$HOME/openr1-controller"; '
             f"bash replay-openr1.sh {method} {run} online --duration {pair['duration']} "
-            f"--arrivals schedules/{run}.json"
+            f"--arrivals schedules/{run}.json --request-timeout 450 --drain-timeout 460"
         )
         result = invoke(["bash", args.cpu, replay], check=False)
-        pair_failed |= bool(result.returncode)
         with (args.output / f"{run}-{method}.tgz").open("wb") as archive:
             collect = f'tar -czf - -C "$HOME/openr1-controller/runs/{run}" {method}'
             invoke(["bash", args.cpu, collect], stdout=archive)
-    if pair_failed:
-        raise SystemExit(f"{run} had a failed replay; captures are available")
+        if result.returncode:
+            log(f"{run} {method} recorded failed requests; resetting its runtime")
+            invoke([*control, "stop", *active])
+            active = None
 if active:
     invoke(["bash", args.switch, args.gpu, args.cpu, "stop", *active])
