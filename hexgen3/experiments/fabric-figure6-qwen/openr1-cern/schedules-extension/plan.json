@@ -1,0 +1,38 @@
+[
+  {
+    "run": "openr1-r400-s061",
+    "rate": 0.05846671,
+    "multiplier": 4.0,
+    "seed": 61,
+    "duration": 180,
+    "offered": 12,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r1200-s061",
+    "rate": 0.17540012,
+    "multiplier": 12.0,
+    "seed": 61,
+    "duration": 180,
+    "offered": 36,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r2400-s061",
+    "rate": 0.35080025,
+    "multiplier": 24.0,
+    "seed": 61,
+    "duration": 180,
+    "offered": 67,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  }
+]
