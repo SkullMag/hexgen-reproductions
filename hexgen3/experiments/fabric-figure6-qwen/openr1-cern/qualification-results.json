@@ -1,0 +1,25 @@
+{
+  "requests": [
+    {
+      "request": "one-token",
+      "tokens": 1,
+      "unpatched_matching_prefix_tokens": 1,
+      "patched_exact_match": true
+    },
+    {
+      "request": "longer-prompt",
+      "tokens": 16,
+      "unpatched_matching_prefix_tokens": 2,
+      "patched_exact_match": true
+    },
+    {
+      "request": "multi-token",
+      "tokens": 8,
+      "unpatched_matching_prefix_tokens": 1,
+      "patched_exact_match": true
+    }
+  ],
+  "model_commit": "ec052fda178e241c7c443468d2fa1db6618996be",
+  "hexgen3_release": "efa3ed99e4337e5443f5fe4ee8c2fb2c29076de7",
+  "patched_qwen_model_sha256": "b0b44b98eaa8851fba78aa5e131781298a901ac0dceef2573a8ac921838c1c4c"
+}
