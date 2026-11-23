@@ -1,5 +1,6 @@
 """Verify paired inputs and summarize captured FABRIC replays."""
 import argparse
+from collections import defaultdict
 import csv
 import json
 import math
@@ -38,6 +39,7 @@ def identity(request):
 
 plan = json.loads(args.plan.read_text())
 rows = []
+latencies = defaultdict(list)
 for pair in plan:
     if not all((args.captures / f"{pair['run']}-{method}.tgz").is_file() for method in methods):
         continue
@@ -50,6 +52,9 @@ for pair in plan:
     for method, (summary, requests) in zip(methods, (baseline, candidate)):
         within = sum(row["success"] and row["within_measurement_window"] for row in requests)
         lag = [row["submission_lag_seconds"] for row in requests if "submission_lag_seconds" in row]
+        latencies[pair["multiplier"], method].extend(
+            row["submit_to_completion_seconds"] for row in requests if row["success"]
+        )
         rows.append({
             "run": pair["run"], "seed": pair["seed"], "load_multiplier": pair["multiplier"],
             "offered_rate": pair["rate"], "method": method, "arm": pair["order"].index(method) + 1,
@@ -66,3 +71,25 @@ with (args.output / "paired-results.csv").open("w", newline="") as stream:
     writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
     writer.writeheader()
     writer.writerows(rows)
+
+groups = defaultdict(list)
+for row in rows:
+    groups[row["load_multiplier"], row["method"]].append(row)
+aggregates = []
+for (multiplier, method), repeats in sorted(groups.items()):
+    windows = sum(row["window_seconds"] for row in repeats)
+    observed_latencies = latencies[multiplier, method]
+    aggregates.append({
+        "load_multiplier": multiplier, "offered_rate": repeats[0]["offered_rate"],
+        "method": method, "paired_seeds": len(repeats),
+        "offered": sum(row["offered"] for row in repeats),
+        "in_window": sum(row["in_window"] for row in repeats),
+        "succeeded": sum(row["succeeded"] for row in repeats),
+        "failures": sum(row["failures"] for row in repeats),
+        "requests_per_second": sum(row["in_window"] for row in repeats) / windows,
+        "p99_seconds": nearest_rank(observed_latencies, 0.99),
+    })
+with (args.output / "rate-summary.csv").open("w", newline="") as stream:
+    writer = csv.DictWriter(stream, fieldnames=list(aggregates[0]))
+    writer.writeheader()
+    writer.writerows(aggregates)
