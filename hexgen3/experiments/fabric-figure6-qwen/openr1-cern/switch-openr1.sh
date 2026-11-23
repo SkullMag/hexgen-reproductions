@@ -22,6 +22,11 @@ stop() {
             pid=\$(cat \"$run/\$role.pid\" 2>/dev/null) || continue;
             if [ \"\$(ps -o pgid= -p \"\$pid\" | tr -d ' ')\" = \"\$pid\" ]; then
                 kill -TERM -- \"-\$pid\" 2>/dev/null || true;
+                for attempt in 1 2 3 4 5; do
+                    kill -0 -- \"-\$pid\" 2>/dev/null || break;
+                    sleep 1;
+                done;
+                kill -KILL -- \"-\$pid\" 2>/dev/null || true;
             fi;
         done"
 }
