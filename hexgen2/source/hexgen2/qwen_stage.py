@@ -7,7 +7,6 @@ from pathlib import Path
 from safetensors import safe_open
 import torch
 from torch import nn
-import torch.distributed as dist
 from transformers import Qwen2MoeConfig
 from transformers.cache_utils import Cache
 from transformers.models.qwen2_moe.modeling_qwen2_moe import (
@@ -15,6 +14,7 @@ from transformers.models.qwen2_moe.modeling_qwen2_moe import (
 )
 
 from .comparison_model import NativeStage
+from .transport import recv_tensor, send_tensor
 
 
 class StageCache(Cache):
@@ -121,14 +121,14 @@ class QwenStage(NativeStage):
         batch, length = ids.shape
         if self.embed_tokens is not None:
             hidden = self(ids, state)
-            dist.send(hidden.contiguous(), dst=tail_rank, group=pair)
+            send_tensor(hidden.contiguous(), tail_rank, pair)
             token = torch.empty(batch, dtype=torch.long, device=self.device)
-            dist.recv(token, src=tail_rank, group=pair)
+            recv_tensor(token, tail_rank, pair)
             return token, None
 
         hidden = torch.empty((batch, length, self.hf.hidden_size),
                              dtype=self.dtype, device=self.device)
-        dist.recv(hidden, src=head_rank, group=pair)
+        recv_tensor(hidden, head_rank, pair)
         logits = self(hidden, state)
         token = logits.argmax(-1)
         if self.audit_directory is not None:
@@ -136,5 +136,5 @@ class QwenStage(NativeStage):
                         'logits': logits.float().cpu()},
                        self.audit_directory / f'audit-{self.audit_sequence:06}.pt')
             self.audit_sequence += 1
-        dist.send(token.contiguous(), dst=head_rank, group=pair)
+        send_tensor(token.contiguous(), head_rank, pair)
         return token, logits

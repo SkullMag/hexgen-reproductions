@@ -77,9 +77,12 @@ def main():
         device = torch.device('cuda', int(os.environ.get('LOCAL_RANK', 0)))
         torch.cuda.set_device(device)
         backend = 'nccl'
-    dist.init_process_group(backend, timeout=timedelta(minutes=10))
+    device_id = device if backend == 'nccl' else None
+    dist.init_process_group(backend, device_id=device_id, timeout=timedelta(minutes=10))
     try:
         results = qualify(args.model_dir, cases, device)
+        if device_id is not None:
+            dist.barrier(device_ids=[device_id.index])
         if dist.get_rank() == 0:
             report = {'device': device.type, 'backend': backend, 'requests': results,
                       'passed': all(row['matched'] for row in results)}
