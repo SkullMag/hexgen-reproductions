@@ -28,13 +28,18 @@ class Journal:
         with self.lock,self.path.open('a') as f:f.write(json.dumps({'event':event,**data,**stamp()},allow_nan=False)+'\n');f.flush()
 
 class Service:
-    def __init__(self,args,model,pair,control,cross,readiness,ordering):
+    def __init__(self,args,model,pair,control,cross,readiness,ordering,topology=None):
         self.args,self.model,self.pair,self.control,self.cross=args,model,pair,control,cross
         self.rank=int(os.environ['RANK']);self.head=self.rank%2==0;self.group=self.rank//2
         self.clock_domain={'hostname':os.uname().nodename,'boot_id':Path('/proc/sys/kernel/random/boot_id').read_text().strip()}
         self.head_rank=self.group*2;self.tail_rank=self.head_rank+1
         self.peer=self.rank+2 if self.group==0 else self.rank-2
         self.readiness=readiness
+        self.cache_links = [(self.peer, cross, readiness, None)]
+        if topology is not None:
+            self.group, self.head_rank, self.tail_rank, self.cache_links = topology
+            self.head = self.rank == self.head_rank
+            self.peer, self.cross, self.readiness, _ = self.cache_links[0]
         self.ordering=ordering;self.fence=LaunchFence();self.compute_epoch=0;self.transfer_epoch=0
         self.output=args.output;self.journal=Journal(args.output/f'rank-{self.rank}-events.jsonl')
         self.jobs=queue.Queue();self.pending={};self.pending_lock=threading.Lock();self.stash=collections.deque()
@@ -100,11 +105,14 @@ class Service:
         # Never leave an idle NCCL receive kernel spinning on the GPU. CUDA
         # module loading/allocation may require context synchronization.
         token=torch.ones(1,dtype=torch.int64)
-        if sending:
-            dist.send(token,dst=self.peer,group=self.readiness);dist.recv(token,src=self.peer,group=self.readiness)
-        else:
-            dist.recv(token,src=self.peer,group=self.readiness);dist.send(token,dst=self.peer,group=self.readiness)
-        if token.item()!=1:raise ValueError('Invalid cache readiness handshake')
+        for peer, _, readiness, _ in self.cache_links:
+            if sending:
+                dist.send(token, dst=peer, group=readiness)
+                dist.recv(token, src=peer, group=readiness)
+            else:
+                dist.recv(token, src=peer, group=readiness)
+                dist.send(token, dst=peer, group=readiness)
+            if token.item()!=1:raise ValueError('Invalid cache readiness handshake')
 
     def thread(self,name,fn):
         def guarded():
@@ -125,11 +133,12 @@ class Service:
                 epoch=self.begin_transfer_epoch() if self.args.kv_transport=='nccl' else None
                 started=stamp()
                 if item is None:
-                    send_packet({}, {'stop':True}, self.peer,group=self.cross)
+                    for peer, group, _, _ in self.cache_links:
+                        send_packet({}, {'stop': True}, peer, group=group)
                     if epoch is not None:self.release_transfer_epoch(epoch)
                     stream.synchronize();return
                 tensors,meta,event=item;stream.wait_event(event)
-                if self.args.audit:meta['sender_payload_sha256']=fingerprints(tensors)
+                source_checksum = fingerprints(tensors) if self.args.audit and self.args.kv_transport == 'gloo' else None
                 payload=tensors
                 staging_ms=0.
                 if self.args.kv_transport=='gloo':
@@ -147,11 +156,22 @@ class Service:
                         host.copy_(tensor,non_blocking=True);payload[key]=host
                     stream.synchronize();staging_ms=(stamp()['monotonic_ns']-started['monotonic_ns'])/1e6
                     tensors=None;item=None
-                size=send_packet(payload,meta,self.peer,group=self.cross)
+                sent = []
+                for peer, group, _, layers in self.cache_links:
+                    packet = payload if layers is None else {
+                        name: tensor for name, tensor in payload.items()
+                        if name == 'first' or int(name) in layers
+                    }
+                    metadata = dict(meta)
+                    if self.args.audit:
+                        metadata['sender_payload_sha256'] = source_checksum or fingerprints(packet)
+                    size = send_packet(packet, metadata, peer, group=group)
+                    sent.append((peer, size, metadata.get('sender_payload_sha256')))
                 if epoch is not None:self.release_transfer_epoch(epoch)
                 stream.synchronize()
-                self.journal.write('kv_send_complete',rank=self.rank,ids=meta['ids'],payload_bytes=size,started=started,readiness_wait_ms=(started['monotonic_ns']-waiting['monotonic_ns'])/1e6,payload_sha256=meta.get('sender_payload_sha256'),backend=self.args.kv_transport,staging_ms=staging_ms)
-                del payload
+                for peer, size, checksum in sent:
+                    self.journal.write('kv_send_complete',rank=self.rank,peer=peer,ids=meta['ids'],payload_bytes=size,started=started,readiness_wait_ms=(started['monotonic_ns']-waiting['monotonic_ns'])/1e6,payload_sha256=checksum,backend=self.args.kv_transport,staging_ms=staging_ms)
+                del packet,payload
                 del tensors,item;self.send_credit.release();self.outbox.task_done()
 
     def receiver(self):
@@ -349,41 +369,72 @@ def main():
     p.add_argument('--method',choices=['hexgen','hexgen2'],required=True);p.add_argument('--phase',choices=['all','prefill','decode'],required=True)
     p.add_argument('--bind',required=True);p.add_argument('--port',type=int,default=8120);p.add_argument('--max-batch',type=int,default=2)
     p.add_argument('--batch-wait-ms',type=float,default=10);p.add_argument('--max-pending',type=int,default=512);p.add_argument('--request-timeout',type=float,default=1800)
-    p.add_argument('--output',type=Path,required=True);args=p.parse_args();args.output.mkdir(parents=True,exist_ok=True)
+    p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--three-rank-qwen', action='store_true')
+    args=p.parse_args();args.output.mkdir(parents=True,exist_ok=True)
     # JSON event arguments remain portable string values.
     args.output=str(args.output)
     rank=int(os.environ['RANK']);device=int(os.environ['LOCAL_RANK']);torch.cuda.set_device(device);torch.set_num_threads(1)
     if runtime_version()<(2,26,0) or os.environ.get('NCCL_LAUNCH_ORDER_IMPLICIT')!='1':
         raise RuntimeError('Ordered comparison requires NCCL >=2.26 and NCCL_LAUNCH_ORDER_IMPLICIT=1')
     torch.manual_seed(123);torch.cuda.manual_seed_all(123);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
-    dist.init_process_group('nccl',timeout=timedelta(seconds=1800))
-    controls=[dist.new_group(r,backend='gloo',timeout=timedelta(seconds=1800)) for r in [[0,1],[2,3]]]
-    pairs=[dist.new_group(r,timeout=timedelta(seconds=1800),group_desc='pipeline-'+str(i)) for i,r in enumerate([[0,1],[2,3]])]
-    links=[dist.new_group(r,backend=args.kv_transport,timeout=timedelta(seconds=1800),group_desc='cache-'+str(i)) for i,r in enumerate([[0,2],[1,3]])]
-    readiness=[dist.new_group(r,backend='gloo',timeout=timedelta(seconds=1800)) for r in [[0,2],[1,3]]]
-    ordering=dist.new_group([0,1,2,3],backend='gloo',timeout=timedelta(seconds=1800))
-    final=dist.new_group([0,1,2,3],backend='gloo',timeout=timedelta(seconds=1800))
     model_dir = Path(args.model_dir)
     model_config = json.loads((model_dir / 'config.json').read_text())
+    world_size = 3 if args.three_rank_qwen else 4
+    if int(os.environ['WORLD_SIZE']) != world_size:
+        p.error(f'This topology requires WORLD_SIZE={world_size}')
+    if args.three_rank_qwen and (
+        args.method != 'hexgen2' or model_config.get('model_type') != 'qwen2_moe'
+        or args.kv_transport != 'nccl' or args.phase != ('prefill' if rank == 0 else 'decode')
+    ):
+        p.error('The three-rank topology requires Qwen, HexGen-2, and one NCCL prefill plus two decode ranks')
+
+    timeout = timedelta(seconds=1800)
+    dist.init_process_group('nccl', timeout=timeout)
+    pp_ranks = [[0], [1, 2]] if args.three_rank_qwen else [[0, 1], [2, 3]]
+    kv_ranks = [[0, 1], [0, 2]] if args.three_rank_qwen else [[0, 2], [1, 3]]
+    controls = [dist.new_group(r, backend='gloo', timeout=timeout) for r in pp_ranks]
+    pairs = [dist.new_group(r, timeout=timeout, group_desc=f'pipeline-{i}') if len(r) > 1 else None
+             for i, r in enumerate(pp_ranks)]
+    links = [dist.new_group(r, backend=args.kv_transport, timeout=timeout, group_desc=f'cache-{i}')
+             for i, r in enumerate(kv_ranks)]
+    readiness = [dist.new_group(r, backend='gloo', timeout=timeout) for r in kv_ranks]
+    ordering = dist.new_group(list(range(world_size)), backend='gloo', timeout=timeout)
+    final = dist.new_group(list(range(world_size)), backend='gloo', timeout=timeout)
+    replica = int(rank > 0) if args.three_rank_qwen else rank // 2
+    stage_rank = pp_ranks[replica].index(rank)
+    link = rank - 1 if args.three_rank_qwen and rank else rank % 2
+    topology = None
     if model_config.get('model_type') == 'qwen2_moe':
         if args.method != 'hexgen2':
             raise ValueError('The Qwen adapter is available for HexGen-2')
         from .qwen_stage import QwenStage
         layers = model_config['num_hidden_layers']
-        start, stop = (0, layers // 2) if rank % 2 == 0 else (layers // 2, layers)
+        split = layers // 2
+        partitions = ((0, split), (split, layers))
+        start, stop = partitions[stage_rank]
+        if args.three_rank_qwen:
+            if rank == 0:
+                start, stop = 0, layers
+                cache_links = [(i + 1, links[i], readiness[i], range(*bounds))
+                               for i, bounds in enumerate(partitions)]
+                topology = (0, 0, 0, cache_links)
+            else:
+                topology = (1, 1, 2, [(0, links[link], readiness[link], None)])
         model = QwenStage(model_dir, start, stop, max_batch=args.max_batch, device=f'cuda:{device}')
         source_name = 'download-source.json'
     else:
         model=NativeStage(args.model_dir,rank%2,args.method,args.baseline_root,max_batch=args.max_batch)
         source_name = 'verified-source.json'
-    identity={'rank':rank,'method':args.method,'stage':rank%2,'config':digest(model_dir/'config.json'),'origin':digest(model_dir/source_name)}
-    identities=[None]*4;dist.all_gather_object(identities,identity,group=final)
+    identity={'rank':rank,'method':args.method,'stage':stage_rank,'config':digest(model_dir/'config.json'),'origin':digest(model_dir/source_name)}
+    identities=[None]*world_size;dist.all_gather_object(identities,identity,group=final)
     if any(i['method']!=args.method or i['config']!=identity['config'] or i['origin']!=identity['origin'] for i in identities):raise ValueError('Worker model/method identity mismatch')
-    args.output=Path(args.output);service=Service(args,model,pairs[rank//2],controls[rank//2],links[rank%2],readiness[rank%2],ordering)
+    args.output=Path(args.output)
+    service=Service(args,model,pairs[replica],controls[replica],links[link],readiness[link],ordering,topology)
     dist.barrier(group=final) # Finish all host/GPU workspace allocation before serving.
     service.journal.write('worker_identity_handshake',identities=identities)
     server=None
-    if rank%2==0:
+    if service.head:
         server=ThreadingHTTPServer((args.bind,args.port),service.handler());server.daemon_threads=True
         threading.Thread(target=server.serve_forever,daemon=True).start()
     try:

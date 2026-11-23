@@ -119,6 +119,9 @@ class QwenStage(NativeStage):
     @torch.inference_mode()
     def step(self, ids, state, pair, head_rank, tail_rank):
         batch, length = ids.shape
+        if self.embed_tokens is not None and self.lm_head is not None:
+            logits = self(ids, state)
+            return logits.argmax(-1), logits
         if self.embed_tokens is not None:
             hidden = self(ids, state)
             send_tensor(hidden.contiguous(), tail_rank, pair)

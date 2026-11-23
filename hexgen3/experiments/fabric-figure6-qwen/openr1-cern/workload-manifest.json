@@ -1,0 +1,30 @@
+{
+  "dataset": "open-r1/OpenR1-Math-220k",
+  "dataset_revision": "e4e141ec9dea9f8326f4d347be56105859b2bd68",
+  "config": "default",
+  "split": "train",
+  "shard": "data/train-00000-of-00010.parquet",
+  "shard_sha256": "ccc3a95e4875dc4cff9bec2f0fb1c93e4c9cbb24fb24853fd0b96c416e1a263c",
+  "tokenizer_model_revision": "ec052fda178e241c7c443468d2fa1db6618996be",
+  "tokenizer_files": {
+    "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+    "tokenizer.json": "f7c9b2dba4a296b1aa76c16a34b8225c0c118978400d4bb66bff0902d702f5b8",
+    "tokenizer_config.json": "3ec7934124b5e81aaa9c0977b95299b8ca3911b91bf8114494023fbbb22a515f",
+    "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+  },
+  "sample_seed": "figure6-openr1-v1",
+  "max_prompt_tokens": 1024,
+  "min_output_tokens": 64,
+  "max_output_tokens": 256,
+  "output_length_source": "Qwen token count of the human solution, bounded to 64\u2013256",
+  "traces": {
+    "pilot": {
+      "sha256": "666921e07d6f978bb744c7abd0b4fa736dafb61c7966bd806aadfa7488739204",
+      "requests": 32
+    },
+    "measured": {
+      "sha256": "13626fe34844bf4d231abe721836b3e8c62419d2edabaf3b59d567259bf9634e",
+      "requests": 480
+    }
+  }
+}
