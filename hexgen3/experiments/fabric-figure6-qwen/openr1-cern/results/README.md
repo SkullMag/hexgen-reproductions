@@ -29,6 +29,14 @@ The repaired HexGen-3 loader matched all 25 smoke-test output tokens. Across the
 
 [Figure 6-style primary comparison](figure6-normalized-primary.png) · [Load sweep figure](openr1-figure6.png) · [Per-pair results](paired-results.csv) · [Rate summary](rate-summary.csv)
 
+## What drove the HexGen-2 tail latency
+
+The local Qwen adapter grouped requests only when both prompt length and generation budget matched. All 91 measured HexGen-2 requests decoded at batch size one, and the worker completed each decode batch before starting the next. Median decode service was 68.85 seconds for a 256-token output, about 3.7 tokens/s. Median prefill took 0.431 seconds, and the decode head's median KV receive interval was 5.5 ms.
+
+The slowest primary-load request was request 8 in seed 997. It took 339.78 seconds end to end and 69.40 seconds in decode. Monotonic timestamps on the corresponding workers show 131.0 seconds before prefill began and another 68.8 seconds between KV receipt and decode start. A serial replay using the original arrival offsets and the measured decode durations reproduces 339.23 seconds for that request. The tail reflects the local adapter's serialized service under a burst of arrivals.
+
+The port uses an eager Transformers MoE path that checks every expert per layer, and the worker synchronizes the CUDA stream at each token. These are candidates for GPU profiling. The measured comparison includes those runtime differences alongside attention and FFN disaggregation. [Qwen stage](../../../../../hexgen2/source/hexgen2/qwen_stage.py) · [Online worker](../../../../../hexgen2/source/hexgen2/comparison_worker.py)
+
 ## Higher-load probes
 
 Three additional matched pairs used seed 61, 180-second windows, and the same physical placement and checkpoint. These single-seed probes report in-window completions and timeout outcomes.
