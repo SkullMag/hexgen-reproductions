@@ -10,7 +10,7 @@ This is the first dataset in the scaled Figure 6 reproduction. The physical pool
 
 ## Placement
 
-Both systems ran in the `hexgen2-qwen-cern-20261123` slice. The private data plane was `qwen-data`, a CERN L2Bridge on `10.86.6.0/24`. The GPU nodes had ConnectX-6 virtual functions at `mlx5_0:1`, RoCE v2 GID index 3, and NVIDIA driver 580.178.04.
+Both systems ran in the `hexgen2-qwen-cern-20261123` slice. The private data plane was `qwen-data`, a CERN L2Bridge on `10.86.6.0/24`. The CPU load generator had four vCPUs and 16 GiB of memory. The GPU nodes had ConnectX-6 virtual functions at `mlx5_0:1`, RoCE v2 GID index 3, and NVIDIA driver 580.178.04.
 
 | Host | Private IP | GPU | HexGen-2 | HexGen-3 |
 | --- | --- | --- | --- | --- |
@@ -41,8 +41,9 @@ PYTHONPATH=hexgen2/source .venv/bin/python freeze-schedules.py \
 bash switch-openr1.sh "$gpu_ssh" "$cpu_ssh" stop hexgen2 h2-openr1-calibration
 python3 run-matrix.py schedules/plan.json captures --switch switch-openr1.sh \
   --gpu "$gpu_ssh" --cpu "$cpu_ssh"
-python3 analyze-openr1.py schedules/plan.json captures analysis
+python3 analyze-openr1.py schedules/plan.json captures analysis --seed-traces seed-traces.json
 python3 plot-openr1.py analysis/rate-summary.csv analysis/openr1-figure6.png
+python3 plot-openr1.py analysis/rate-summary.csv analysis/figure6-normalized-primary.png --normalized-primary
 ```
 
 Run the replay and trace-freezing commands in the CPU node's experiment directory. Copy the complete `schedules/` directory to the controller that holds the SSH wrappers before running the matrix. The runner reuses a drained runtime when the same method ends one pair and starts the next. A fresh runtime receives the three frozen warmup requests before measurement starts.
@@ -54,3 +55,14 @@ All online pairs use the same trace, arrival offsets, duration, request IDs, and
 The four-request calibration queue ran for a 205-second measurement window. The first three successful completions arrived at 68.685, 137.273, and 205.515 seconds. Two requests timed out during the drain. The calibration uses the median 68.415-second gap between those three completions, which estimates 0.01462 requests per second while the decoder stays busy. The [calibration record](schedules/calibration.json) retains the fixed-window estimate as well. The controller stopped that runtime and started a fresh HexGen-2 instance before the first measured pair.
 
 Seeds 61, 305, and 997 each cover five offered loads with disjoint segments of the frozen measured trace. The [seed manifest](seed-traces.json) records the ranges and hashes. The primary 0.85× load has 480-second windows and the other rates have 240-second windows. The [replay manifest](schedules/plan.json) records every requested rate, duration, offered count, and arm order. Each arm has the same 450-second HTTP request timeout and 460-second drain allowance. Small request counts constrain the resolution of empirical P99.
+
+## Overload probes
+
+After the first two seeds, HexGen-3 had finished every arrival inside the 1.40× windows. The [extension manifest](schedules-extension/plan.json) freezes three 180-second probes at 4×, 12×, and 24× using seed 61. Each request has a 180-second HTTP timeout, and each arm has a 190-second drain allowance. The shorter timeout applies after the end of the measurement window for every arrival. Report timeouts and completions together for these high-load probes.
+
+Generate the extension schedules on the CPU node with the same calibration file, or copy the committed `openr1-*.json` schedules into the CPU node's `schedules/` directory. Use the same physical workers and CPU client.
+
+```bash
+python3 run-matrix.py schedules-extension/plan.json captures   --switch switch-openr1.sh --gpu "$gpu_ssh" --cpu "$cpu_ssh"   --request-timeout 180 --drain-timeout 190
+python3 analyze-openr1.py schedules-extension/plan.json captures extension-analysis   --seed-traces seed-traces.json
+```
