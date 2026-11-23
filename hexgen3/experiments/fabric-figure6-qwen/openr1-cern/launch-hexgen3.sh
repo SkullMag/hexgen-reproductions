@@ -13,12 +13,13 @@ export NCCL_SOCKET_IFNAME="=$GLOO_SOCKET_IFNAME"
 export NCCL_NET=IB NCCL_IB_DISABLE=0 NCCL_IB_HCA="=mlx5_0:1" NCCL_IB_GID_INDEX=3
 export NCCL_NET_GDR_LEVEL=SYS NCCL_NET_GDR_READ=1 NCCL_IB_PCI_RELAXED_ORDERING=0
 export NCCL_CUMEM_ENABLE=0 NCCL_CUMEM_HOST_ENABLE=0
+export NCCL_DEBUG=INFO NCCL_DEBUG_SUBSYS=INIT,NET
 export SGLANG_DISAGGREGATION_BOOTSTRAP_TIMEOUT=700
 model="$HOME/hexgen2-qwen/checkpoint"
 common=(--model-path "$model" --dtype bfloat16 --context-length 1792
     --chunked-prefill-size 2048 --max-prefill-tokens 2048
     --disable-overlap-schedule --disable-cuda-graph --disable-radix-cache
-    --disable-custom-all-reduce --skip-server-warmup
+    --disable-custom-all-reduce --skip-server-warmup --skip-tokenizer-init
     --attention-backend triton --sampling-backend pytorch --log-level "$log_level")
 pd=(--disaggregation-transfer-backend mooncake --disaggregation-ib-device mlx5_0
     --disaggregation-bootstrap-port 9001)
