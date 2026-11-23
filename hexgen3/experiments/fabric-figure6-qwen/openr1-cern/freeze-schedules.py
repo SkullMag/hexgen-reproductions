@@ -2,6 +2,7 @@
 import argparse
 import json
 from pathlib import Path
+from statistics import median
 
 from hexgen2.comparison_client import poisson_arrivals
 
@@ -12,18 +13,32 @@ parser.add_argument("--duration", type=int, default=240)
 parser.add_argument("--primary-duration", type=int, default=480)
 args = parser.parse_args()
 pilot = json.loads(args.pilot.read_text())
-capacity = pilot["throughput_requests_per_second"]
-if not pilot["capture_complete"] or not capacity:
-    raise SystemExit("The baseline pilot did not establish a rate")
-if pilot["failures"]:
-    requests = [json.loads(line) for line in args.pilot.with_name("requests.jsonl").read_text().splitlines()]
-    failures = [row for row in requests if not row["success"]]
-    if len(failures) != pilot["failures"] or any(
-        row.get("error_type") != "TimeoutError" or row["within_measurement_window"] for row in failures
-    ):
-        raise SystemExit("A baseline pilot failure affected the measurement window")
+if not pilot["capture_complete"]:
+    raise SystemExit("The baseline pilot capture is incomplete")
+requests = [json.loads(line) for line in args.pilot.with_name("requests.jsonl").read_text().splitlines()]
+failures = [row for row in requests if not row["success"]]
+if len(failures) != pilot["failures"] or any(
+    row.get("error_type") != "TimeoutError" or row["within_measurement_window"] for row in failures
+):
+    raise SystemExit("A baseline pilot failure affected the measurement window")
+first_failure = min((row["completed_offset_s"] for row in failures), default=float("inf"))
+completions = sorted(
+    row["completed_offset_s"] for row in requests
+    if row["success"] and row["completed_offset_s"] < first_failure
+)
+if len(completions) < 2:
+    raise SystemExit("The baseline pilot needs two completions under backlog")
+interval = median(second - first for first, second in zip(completions, completions[1:]))
+capacity = 1 / interval
 
 args.output.mkdir(parents=True, exist_ok=False)
+(args.output / "calibration.json").write_text(json.dumps({
+    "pilot_run": pilot["run_id"],
+    "completion_offsets_before_first_timeout_seconds": completions,
+    "median_inter_completion_seconds": interval,
+    "estimated_hexgen2_requests_per_second": capacity,
+    "fixed_window_requests_per_second": pilot["throughput_requests_per_second"],
+}, indent=2) + "\n")
 plan = []
 for seed in (61, 305, 997):
     for multiplier in (0.85, 0.50, 1.00, 1.10, 1.40):
