@@ -28,3 +28,19 @@ Each system completed all 91 scheduled requests after drain with zero request fa
 The repaired HexGen-3 loader matched all 25 smoke-test output tokens. Across the longer workload requests, the first token matched in 91 of 91 paired generations and the full sequence matched in 7 of 91. Every measured request generated its frozen token budget.
 
 [Figure 6-style primary comparison](figure6-normalized-primary.png) · [Load sweep figure](openr1-figure6.png) · [Per-pair results](paired-results.csv) · [Rate summary](rate-summary.csv)
+
+## Higher-load probes
+
+Three additional matched pairs used seed 61, 180-second windows, and the same physical placement and checkpoint. These single-seed probes report in-window completions and timeout outcomes.
+
+| Offered requests/s | Offered per arm | HexGen-2 in window | HexGen-3 in window | HexGen-2 timeouts | HexGen-3 timeouts |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.05847 | 12 | 4 | 12 | 7 | 0 |
+| 0.17540 | 36 | 4 | 28 | 32 | 0 |
+| 0.35080 | 67 | 4 | 45 | 63 | 0 |
+
+HexGen-2 completed four requests in each window, or 0.0222 requests/s. At the highest offered load, HexGen-3 completed 45 requests inside the window, or 0.2500 requests/s, and finished all 67 after drain. Its P99 at that point was 85.06 seconds and 22 completions fell outside the window. HexGen-3 had no request failures across the 115 extension arrivals. HexGen-2's extension failures were HTTP client timeouts after the measurement windows.
+
+All 36 arm captures were saved and verified against SHA-256. The run controller stopped the benchmark processes at the end, and GPU checks showed zero allocated memory on all three workers.
+
+[Overload per-pair results](overload-paired-results.csv) · [Overload rate summary](overload-rate-summary.csv) · [Capture hashes](capture-sha256.txt)

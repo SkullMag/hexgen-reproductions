@@ -58,7 +58,7 @@ Seeds 61, 305, and 997 each cover five offered loads with disjoint segments of t
 
 ## Overload probes
 
-After the first two seeds, HexGen-3 had finished every arrival inside the 1.40× windows. The [extension manifest](schedules-extension/plan.json) freezes three 180-second probes at 4×, 12×, and 24× using seed 61. Each request has a 180-second HTTP timeout, and each arm has a 190-second drain allowance. The shorter timeout applies after the end of the measurement window for every arrival. Report timeouts and completions together for these high-load probes.
+After the first two seeds, HexGen-3 had finished every arrival inside the 1.40× windows. The [extension manifest](schedules-extension/plan.json) freezes three 180-second probes at 4×, 12×, and 24× using seed 61. Each request has a 180-second HTTP timeout, and each arm has a 190-second drain allowance. Every request deadline falls after the end of the measurement window. Report timeouts and completions together for these high-load probes.
 
 Generate the extension schedules on the CPU node with the same calibration file, or copy the committed `openr1-*.json` schedules into the CPU node's `schedules/` directory. Use the same physical workers and CPU client.
 
