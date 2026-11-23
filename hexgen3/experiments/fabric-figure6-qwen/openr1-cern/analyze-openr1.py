@@ -2,6 +2,7 @@
 import argparse
 from collections import defaultdict
 import csv
+import hashlib
 import json
 import math
 import tarfile
@@ -11,6 +12,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("plan", type=Path)
 parser.add_argument("captures", type=Path)
 parser.add_argument("output", type=Path)
+parser.add_argument("--seed-traces", type=Path)
 args = parser.parse_args()
 methods = ("hexgen2", "hexgen3")
 args.output.mkdir(parents=True, exist_ok=True)
@@ -38,6 +40,10 @@ def identity(request):
 
 
 plan = json.loads(args.plan.read_text())
+trace_hashes = (
+    {row["seed"]: row["sha256"] for row in json.loads(args.seed_traces.read_text())}
+    if args.seed_traces else {}
+)
 rows = []
 latencies = defaultdict(list)
 for pair in plan:
@@ -47,6 +53,16 @@ for pair in plan:
     for key in ("trace_sha256", "arrivals_sha256", "clock_domain", "duration_seconds"):
         if baseline[0][key] != candidate[0][key]:
             raise ValueError(f"{pair['run']} has different {key} between arms")
+    actual_order = sorted((baseline[0], candidate[0]), key=lambda row: row["origin_utc_ns"])
+    if [row["method"] for row in actual_order] != pair["order"]:
+        raise ValueError(f"{pair['run']} ran in a different arm order")
+    if actual_order[0]["end_utc_ns"] > actual_order[1]["origin_utc_ns"]:
+        raise ValueError(f"{pair['run']} ran overlapping arms")
+    schedule = args.plan.with_name(f"{pair['run']}.json")
+    if hashlib.sha256(schedule.read_bytes()).hexdigest() != baseline[0]["arrivals_sha256"]:
+        raise ValueError(f"{pair['run']} did not replay its frozen schedule")
+    if trace_hashes and trace_hashes[pair["seed"]] != baseline[0]["trace_sha256"]:
+        raise ValueError(f"{pair['run']} did not replay its frozen trace")
     if list(map(identity, baseline[1])) != list(map(identity, candidate[1])):
         raise ValueError(f"{pair['run']} has different offered requests between arms")
     for method, (summary, requests) in zip(methods, (baseline, candidate)):
