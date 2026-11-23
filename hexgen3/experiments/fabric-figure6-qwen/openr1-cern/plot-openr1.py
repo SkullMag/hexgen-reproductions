@@ -32,8 +32,8 @@ if args.normalized_primary:
         ax.grid(axis="y", color="#d8dde4", linewidth=0.65)
         ax.set_axisbelow(True)
         ax.spines[["top", "right"]].set_visible(False)
-    count = primary["hexgen2"]["succeeded"]
-    fig.suptitle(f"OpenR1-Math · 0.85× offered load · {count} completed per system",
+    count = primary["hexgen2"]["offered"]
+    fig.suptitle(f"OpenR1-Math · 0.85× offered load · {count} requests per system",
                  fontweight="bold", fontsize=12)
     fig.supxlabel("Shared CERN pool of one A40 and two A30s", fontsize=9)
     fig.savefig(args.output, dpi=180, bbox_inches="tight")
