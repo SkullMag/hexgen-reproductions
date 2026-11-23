@@ -1,0 +1,157 @@
+{
+  "qualification": {
+    "rank_exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "controller_finish_utc": "2026-11-23T07:52:10+00:00",
+    "gdr_directions": [
+      {
+        "source": 0,
+        "target": 1,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 0,
+        "target": 2,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 1,
+        "target": 0,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 1,
+        "target": 2,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 2,
+        "target": 0,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 2,
+        "target": 1,
+        "send": true,
+        "receive": true
+      }
+    ],
+    "nccl_log_sha256": {
+      "nccl-rank-0.log": "547ce54a0d090b23ade9ea4313058cd6bd7cb31cbb6af75cffedf04ecf37a931",
+      "nccl-rank-1.log": "c6248356513d00d4250442436085a8ece4ab96fb7b8cf87e45458c053b024ded",
+      "nccl-rank-2.log": "eed870b4808e16c464a6b2e6812c6633d7e3d975d1df7db4afe39befadd31b4f"
+    },
+    "controller_start_utc": "2026-11-23T07:51:49Z"
+  },
+  "link_check": {
+    "rank_exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "controller_finish_utc": "2026-11-23T07:54:07+00:00",
+    "gdr_directions": [
+      {
+        "source": 0,
+        "target": 1,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 0,
+        "target": 2,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 1,
+        "target": 0,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 1,
+        "target": 2,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 2,
+        "target": 0,
+        "send": true,
+        "receive": true
+      },
+      {
+        "source": 2,
+        "target": 1,
+        "send": true,
+        "receive": true
+      }
+    ],
+    "nccl_log_sha256": {
+      "nccl-rank-0.log": "c96f42bae31c984500f75b46e53474784cfe1ebac30339d514e58cce09a68691",
+      "nccl-rank-1.log": "6f6e28753fb406e8ea7ffd5d546440090bc196eb21c6f39df549a0448b10c91b",
+      "nccl-rank-2.log": "cf2df54b04f9bacaf8f986cf4f1471dc07b889f51f854a1f813bf77fef41fb93"
+    },
+    "measurements": [
+      {
+        "source": 0,
+        "target": 1,
+        "bytes": 67108864,
+        "iterations": 8,
+        "seconds": 0.0765763790004712,
+        "gbits_per_second": 56.08736469471312
+      },
+      {
+        "source": 0,
+        "target": 2,
+        "bytes": 67108864,
+        "iterations": 8,
+        "seconds": 0.06724157900134742,
+        "gbits_per_second": 63.87368291743916
+      },
+      {
+        "source": 1,
+        "target": 0,
+        "bytes": 67108864,
+        "iterations": 8,
+        "seconds": 0.09602111499953025,
+        "gbits_per_second": 44.72940452754597
+      },
+      {
+        "source": 1,
+        "target": 2,
+        "bytes": 67108864,
+        "iterations": 8,
+        "seconds": 0.1487323289984488,
+        "gbits_per_second": 28.87716023087889
+      },
+      {
+        "source": 2,
+        "target": 0,
+        "bytes": 67108864,
+        "iterations": 8,
+        "seconds": 0.057993480000732234,
+        "gbits_per_second": 74.05948558261673
+      },
+      {
+        "source": 2,
+        "target": 1,
+        "bytes": 67108864,
+        "iterations": 8,
+        "seconds": 0.05791562800004613,
+        "gbits_per_second": 74.15903866218251
+      }
+    ]
+  },
+  "runtime_commit": "acac14736a473b203fa1ee879cce2f32a3e57116",
+  "checkpoint_sha256": "5d322584d22c982c73a014afebfbc41072351fa35c837ecae667ae95310931f1"
+}

@@ -7,7 +7,7 @@ This protocol scales the heterogeneous comparison in [HexGen-3 Figure 6](https:/
 | Input | Planned value |
 | --- | --- |
 | Model and tokenizer | [`Qwen/Qwen1.5-MoE-A2.7B-Chat` at `ec052fd`](https://huggingface.co/Qwen/Qwen1.5-MoE-A2.7B-Chat/tree/ec052fda178e241c7c443468d2fa1db6618996be), BF16 for both systems |
-| HexGen-2 starting point | [Native CERN runtime at `1bd498b`](../../../hexgen2/experiments/cern-gpudirect-20261109/original13b/runtime/). Its Qwen-compatible build is pending. |
+| HexGen-2 starting point | [Native CERN runtime at `1bd498b`](../../../hexgen2/experiments/cern-gpudirect-20261109/original13b/runtime/) and the Qwen port described below. |
 | HexGen-3 starting point | [Released runtime at `efa3ed9`](https://github.com/Relaxed-System-Lab/HexGen-3/tree/efa3ed99e4337e5443f5fe4ee8c2fb2c29076de7) |
 | FABRIC slice | Target 2 A40s and 2 A30s with qualified GPUDirect RDMA links and a separate CPU load generator |
 | HexGen-2 smoke test | 1 A40 for prefill and 2 A30s for decode, reusing the CERN roles. Start with Qwen layers `[0, 12)` and `[12, 24)` on the two decode stages. |
@@ -45,4 +45,4 @@ The [replay client](../../../hexgen2/source/hexgen2/comparison_client.py) takes 
 
 Commit the tested launchers and resolved run configuration before collecting results. Record both runtime commit IDs, model and tokenizer revision, dependency versions, ranks and placements, dataset revisions, workload hashes, arrival seeds and rates, generation settings, warmup and measurement windows, and the criteria for identifying stable runs. Keep a per-run request log with request ID, submission and completion timestamps, token counts, status, and run configuration ID. Publish the aggregate table, paired plots, and the reporting command with the measured commit ID. Keep credentials, model weights, and large telemetry outside Git.
 
-Local checks passed for BF16 staged logits against a full Qwen2-MoE fixture, exact token parity across three CPU Gloo ranks after transferring the cache, and paired replay against mock HTTP endpoints. Full-checkpoint CUDA qualification and the measured FABRIC comparison are pending.
+Local checks passed for BF16 staged logits against a full Qwen2-MoE fixture, exact token parity across three CPU Gloo ranks after transferring the cache, and paired replay against mock HTTP endpoints. HexGen-2 also passed full-checkpoint CUDA qualification on three CERN workers. The four-GPU comparison and HexGen-3 qualification remain pending. [CERN qualification run](cern-smoke-20261123/)
