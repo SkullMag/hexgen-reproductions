@@ -11,6 +11,9 @@ parser.add_argument("pilot", type=Path)
 parser.add_argument("output", type=Path)
 parser.add_argument("--duration", type=int, default=240)
 parser.add_argument("--primary-duration", type=int, default=480)
+parser.add_argument("--multipliers", type=float, nargs="+", default=(0.85, 0.50, 1.00, 1.10, 1.40))
+parser.add_argument("--seeds", type=int, nargs="+", choices=(61, 305, 997), default=(61, 305, 997))
+parser.add_argument("--preceding-pairs", type=int, default=0)
 args = parser.parse_args()
 pilot = json.loads(args.pilot.read_text())
 if not pilot["capture_complete"]:
@@ -40,16 +43,16 @@ args.output.mkdir(parents=True, exist_ok=False)
     "fixed_window_requests_per_second": pilot["throughput_requests_per_second"],
 }, indent=2) + "\n")
 plan = []
-for seed in (61, 305, 997):
-    for multiplier in (0.85, 0.50, 1.00, 1.10, 1.40):
+for seed in args.seeds:
+    for multiplier in args.multipliers:
         rate = round(capacity * multiplier, 8)
         run = f"openr1-r{round(multiplier * 100):03}-s{seed:03}"
         duration = args.primary_duration if multiplier == 0.85 else args.duration
         schedule = poisson_arrivals(rate, duration, seed)
-        if len(schedule["offsets_s"]) > 480:
-            raise SystemExit(f"{run} needs more than 480 request rows")
+        if len(schedule["offsets_s"]) > 160:
+            raise SystemExit(f"{run} needs more than 160 request rows for its seed")
         (args.output / f"{run}.json").write_text(json.dumps(schedule, indent=2) + "\n")
-        order = ["hexgen2", "hexgen3"] if len(plan) % 2 == 0 else ["hexgen3", "hexgen2"]
+        order = ["hexgen2", "hexgen3"] if (args.preceding_pairs + len(plan)) % 2 == 0 else ["hexgen3", "hexgen2"]
         plan.append({
             "run": run,
             "rate": rate,
