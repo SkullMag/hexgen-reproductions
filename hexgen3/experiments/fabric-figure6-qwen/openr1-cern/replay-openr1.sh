@@ -13,7 +13,14 @@ esac
 case "$mode" in
     finite) trace=qualification.jsonl; inflight=3 ;;
     offline) trace=workload/pilot.jsonl; inflight=4 ;;
-    online) trace=workload/measured.jsonl; inflight=256 ;;
+    online)
+        trace=workload/measured.jsonl
+        case "$run" in
+            *-s305) trace=workload/measured-s305.jsonl ;;
+            *-s997) trace=workload/measured-s997.jsonl ;;
+        esac
+        inflight=256
+        ;;
     *) exit 2 ;;
 esac
 export PYTHONPATH=hexgen2/source
