@@ -7,9 +7,37 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("summary")
 parser.add_argument("output")
+parser.add_argument("--normalized-primary", action="store_true")
 args = parser.parse_args()
 with open(args.summary, newline="") as stream:
     summary = list(csv.DictReader(stream))
+
+
+if args.normalized_primary:
+    primary = {row["method"]: row for row in summary if float(row["load_multiplier"]) == 0.85}
+    methods = ("hexgen2", "hexgen3")
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.6), layout="constrained")
+    for ax, metric, label in zip(
+        axes, ("requests_per_second", "p99_seconds"),
+        ("Completed requests per cost", "P99 end-to-end latency"),
+    ):
+        raw = [float(primary[method][metric]) for method in methods]
+        values = [value / raw[0] for value in raw]
+        bars = ax.bar(("HexGen-2", "HexGen-3"), values,
+                      color=("#315d88", "#bc5223"), width=0.52)
+        ax.bar_label(bars, labels=[f"{value:.2f}×" for value in values], padding=4)
+        ax.set_title(label, fontsize=11)
+        ax.set_ylabel("Relative to HexGen-2")
+        ax.set_ylim(0, max(values) * 1.25)
+        ax.grid(axis="y", color="#d8dde4", linewidth=0.65)
+        ax.set_axisbelow(True)
+        ax.spines[["top", "right"]].set_visible(False)
+    count = primary["hexgen2"]["succeeded"]
+    fig.suptitle(f"OpenR1-Math · 0.85× offered load · {count} completed per system",
+                 fontweight="bold", fontsize=12)
+    fig.supxlabel("Shared CERN pool of one A40 and two A30s", fontsize=9)
+    fig.savefig(args.output, dpi=180, bbox_inches="tight")
+    raise SystemExit(0)
 
 fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.6), layout="constrained")
 for method, label, color, marker in (
