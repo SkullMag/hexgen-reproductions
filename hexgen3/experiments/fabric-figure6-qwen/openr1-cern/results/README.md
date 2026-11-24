@@ -37,6 +37,8 @@ The slowest primary-load request was request 8 in seed 997. It took 339.78 secon
 
 The port uses an eager Transformers MoE path that checks every expert per layer, and the worker synchronizes the CUDA stream at each token. These are candidates for GPU profiling. The measured comparison includes those runtime differences alongside attention and FFN disaggregation. [Qwen stage](../../../../../hexgen2/source/hexgen2/qwen_stage.py) · [Online worker](../../../../../hexgen2/source/hexgen2/comparison_worker.py)
 
+The three primary OpenR1 pairs were rerun with both systems capped at one active decode request. [Batch size one results](batch-one/README.md)
+
 ## Higher-load probes
 
 Three additional matched pairs used seed 61, 180-second windows, and the same physical placement and checkpoint. These single-seed probes report in-window completions and timeout outcomes.

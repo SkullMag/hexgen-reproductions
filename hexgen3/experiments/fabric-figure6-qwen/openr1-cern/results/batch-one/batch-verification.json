@@ -1,0 +1,70 @@
+{
+  "runtimes": {
+    "matrix-openr1-r085-s061-hexgen2": {
+      "smoke_requests": 3,
+      "smoke_tokens": 25,
+      "nccl_gdr": {
+        "prefill": true,
+        "decode-1": true,
+        "decode-2": true
+      }
+    },
+    "matrix-openr1-r085-s061-hexgen3": {
+      "smoke_requests": 3,
+      "smoke_tokens": 25,
+      "nccl_gdr": {
+        "decode-1": true,
+        "decode-2": true
+      },
+      "decode_samples": {
+        "1": 73
+      },
+      "decode_running_cap": 1,
+      "mooncake_ib": true,
+      "stepmesh_rdma": true
+    },
+    "matrix-openr1-r085-s305-hexgen2": {
+      "smoke_requests": 3,
+      "smoke_tokens": 25,
+      "nccl_gdr": {
+        "prefill": true,
+        "decode-1": true,
+        "decode-2": true
+      }
+    },
+    "matrix-openr1-r085-s997-hexgen3": {
+      "smoke_requests": 3,
+      "smoke_tokens": 25,
+      "nccl_gdr": {
+        "decode-1": true,
+        "decode-2": true
+      },
+      "decode_samples": {
+        "1": 62
+      },
+      "decode_running_cap": 1,
+      "mooncake_ib": true,
+      "stepmesh_rdma": true
+    }
+  },
+  "baselines": {
+    "openr1-r085-s061": {
+      "decode_batches": {
+        "1": 7
+      },
+      "successful": 7
+    },
+    "openr1-r085-s305": {
+      "decode_batches": {
+        "1": 8
+      },
+      "successful": 8
+    },
+    "openr1-r085-s997": {
+      "decode_batches": {
+        "1": 12
+      },
+      "successful": 12
+    }
+  }
+}
