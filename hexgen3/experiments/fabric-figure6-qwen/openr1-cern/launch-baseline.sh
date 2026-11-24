@@ -19,6 +19,8 @@ phase=decode
 if [[ "$rank" == 0 ]]; then phase=prefill; fi
 flags=()
 if [[ "${4:-}" == audit ]]; then flags+=(--audit); fi
+max_batch=2
+if [[ "${OPENR1_BATCH_ONE:-0}" == 1 ]]; then max_batch=1; fi
 exec .venv/bin/python -u -m hexgen2.comparison_worker --method hexgen2 --three-rank-qwen \
-  --phase "$phase" --model-dir "$PWD/checkpoint" --baseline-root "$PWD" --max-batch 2 \
+  --phase "$phase" --model-dir "$PWD/checkpoint" --baseline-root "$PWD" --max-batch "$max_batch" \
   --batch-wait-ms 10 --bind "10.86.6.$((11 + rank))" --port 8210 --output "$run" "${flags[@]}"

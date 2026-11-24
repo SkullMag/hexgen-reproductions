@@ -49,10 +49,12 @@ case "$role" in
         fi
         if [[ "$role" == attn ]]; then
             export SGLANG_HOST_IP=10.86.6.13 DMLC_NODE_HOST=10.86.6.13
+            max_running_requests=16
+            if [[ "${OPENR1_BATCH_ONE:-0}" == 1 ]]; then max_running_requests=1; fi
             exec .venv/bin/python -u -m sglang.launch_server "${common[@]}" "${pd[@]}" \
                 --host "$SGLANG_HOST_IP" --port 8302 --disaggregation-mode decode \
                 --afd-perspective attn --afd-mirco-batch 2 --max-total-tokens 6144 \
-                --mem-fraction-static 0.90 --max-running-requests 16
+                --mem-fraction-static 0.90 --max-running-requests "$max_running_requests"
         fi
         rank="${role##*-}"
         export SGLANG_HOST_IP="10.86.6.$((12 + rank))"

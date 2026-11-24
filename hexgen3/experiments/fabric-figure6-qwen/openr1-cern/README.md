@@ -56,6 +56,20 @@ The four-request calibration queue ran for a 205-second measurement window. The 
 
 Seeds 61, 305, and 997 each cover five offered loads with disjoint segments of the frozen measured trace. The [seed manifest](seed-traces.json) records the ranges and hashes. The primary 0.85× load has 480-second windows and the other rates have 240-second windows. The [replay manifest](schedules/plan.json) records every requested rate, duration, offered count, and arm order. Each arm has the same 450-second HTTP request timeout and 460-second drain allowance. Small request counts constrain the resolution of empirical P99.
 
+## Decode batch size one control
+
+`OPENR1_BATCH_ONE=1` sets HexGen-2's `--max-batch` and the HexGen-3 decode-attention worker's `--max-running-requests` to one. The replay keeps the three 0.85× schedules, their original arm order, and the client admission settings. Requests can queue at the original offered times. The cap leaves HexGen-3's separate prefill scheduler in use. A single decode request also leaves its two-way AFD microbatching inactive.
+
+Stage the current launchers on the GPUs and run the control from a fresh replay directory on the CPU node. Use a separate capture directory and verify the observed batch size against the HexGen-2 per-request `native.batch` fields and the HexGen-3 decode-attention log.
+
+```bash
+jq '[.[] | select(.multiplier == 0.85)]' schedules/plan.json > schedules/batch-one-plan.json
+OPENR1_BATCH_ONE=1 python3 run-matrix.py schedules/batch-one-plan.json captures-batch-one \
+  --switch switch-openr1.sh --gpu "$gpu_ssh" --cpu "$cpu_ssh"
+python3 analyze-openr1.py schedules/batch-one-plan.json captures-batch-one analysis-batch-one \
+  --seed-traces seed-traces.json
+```
+
 ## Overload probes
 
 After the first two seeds, HexGen-3 had finished every arrival inside the 1.40× windows. The [extension manifest](schedules-extension/plan.json) freezes three 180-second probes at 4×, 12×, and 24× using seed 61. Each request has a 180-second HTTP timeout, and each arm has a 190-second drain allowance. Every request deadline falls after the end of the measurement window. Report timeouts and completions together for these high-load probes.

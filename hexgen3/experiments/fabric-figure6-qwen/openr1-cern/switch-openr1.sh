@@ -2,6 +2,8 @@
 set -euo pipefail
 gpu="$1"; cpu="$2"; operation="$3"; method="$4"; run="$5"
 [[ "$run" =~ ^[a-zA-Z0-9_-]+$ ]]
+batch_one="${OPENR1_BATCH_ONE:-0}"
+[[ "$batch_one" == 0 || "$batch_one" == 1 ]]
 case "$method" in
     hexgen2) root=hexgen2-qwen ;;
     hexgen3) root=hexgen3-openr1 ;;
@@ -11,7 +13,7 @@ esac
 start() {
     local node="$1" role="$2" invocation="$3"
     bash "$gpu" "$node" "cd \"\$HOME/$root\"; mkdir -p '$run'; if test -f '$run/$role.pid'; then exit 1; fi;
-        nohup setsid $invocation > '$run/$role.log' 2>&1 </dev/null & echo \$! > '$run/$role.pid'"
+        OPENR1_BATCH_ONE=$batch_one nohup setsid $invocation > '$run/$role.log' 2>&1 </dev/null & echo \$! > '$run/$role.pid'"
 }
 
 stop() {
