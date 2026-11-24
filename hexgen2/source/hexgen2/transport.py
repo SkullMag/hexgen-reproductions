@@ -22,6 +22,24 @@ def wire_device(group=None):
     return torch.device("cuda", torch.cuda.current_device()) if dist.get_backend(group) == "nccl" else torch.device("cpu")
 
 
+def send_tensor(tensor, dst, group=None):
+    if dist.get_backend(group) == "nccl":
+        # Reuse the group communicator. PyTorch 2.5 can mistake a standalone
+        # peer communicator's rank key for a CUDA device at shutdown.
+        request, = dist.batch_isend_irecv([dist.P2POp(dist.isend, tensor, dst, group=group)])
+        request.wait()
+    else:
+        dist.send(tensor, dst=dst, group=group)
+
+
+def recv_tensor(tensor, src, group=None):
+    if dist.get_backend(group) == "nccl":
+        request, = dist.batch_isend_irecv([dist.P2POp(dist.irecv, tensor, src, group=group)])
+        request.wait()
+    else:
+        dist.recv(tensor, src=src, group=group)
+
+
 def validate_header(header):
     if header.get("version") != 1 or not isinstance(header.get("tensors"), list):
         raise ValueError("Unsupported tensor packet")
@@ -51,31 +69,31 @@ def send_packet(tensors, metadata, dst, group=None):
     if not 0 < len(encoded) <= MAX_HEADER:
         raise ValueError("Tensor metadata exceeds limit")
     device = wire_device(group)
-    dist.send(torch.tensor([len(encoded)], dtype=torch.int64, device=device), dst=dst, group=group)
-    dist.send(torch.tensor(list(encoded), dtype=torch.uint8, device=device), dst=dst, group=group)
+    send_tensor(torch.tensor([len(encoded)], dtype=torch.int64, device=device), dst, group)
+    send_tensor(torch.tensor(list(encoded), dtype=torch.uint8, device=device), dst, group)
     for tensor in tensors.values():
         tensor = tensor.detach().to(device).contiguous()
         if tensor.numel():
-            dist.send(tensor, dst=dst, group=group)
+            send_tensor(tensor, dst, group)
     return payload_bytes
 
 
 def recv_packet(src, group=None):
     device = wire_device(group)
     length = torch.empty(1, dtype=torch.int64, device=device)
-    dist.recv(length, src=src, group=group)
+    recv_tensor(length, src, group)
     size = length.item()
     if not 0 < size <= MAX_HEADER:
         raise ValueError("Invalid tensor header length")
     encoded = torch.empty(size, dtype=torch.uint8, device=device)
-    dist.recv(encoded, src=src, group=group)
+    recv_tensor(encoded, src, group)
     header = json.loads(bytes(encoded.cpu().tolist()).decode("utf-8"))
     validate_header(header)
     tensors = {}
     for item in header["tensors"]:
         tensor = torch.empty(item["shape"], dtype=DTYPES[item["dtype"]], device=device)
         if tensor.numel():
-            dist.recv(tensor, src=src, group=group)
+            recv_tensor(tensor, src, group)
         tensors[item["name"]] = tensor
     return tensors, header["metadata"]
 

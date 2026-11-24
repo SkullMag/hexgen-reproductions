@@ -1,0 +1,29 @@
+[
+  {
+    "seed": 61,
+    "eligible_range": [
+      0,
+      160
+    ],
+    "trace": "measured.jsonl",
+    "sha256": "13626fe34844bf4d231abe721836b3e8c62419d2edabaf3b59d567259bf9634e"
+  },
+  {
+    "seed": 305,
+    "eligible_range": [
+      160,
+      320
+    ],
+    "trace": "measured-s305.jsonl",
+    "sha256": "5e1bca9f4925781ffdda50b474cc005a0ff0858f9b72ad5f8f8faafed06deee0"
+  },
+  {
+    "seed": 997,
+    "eligible_range": [
+      320,
+      480
+    ],
+    "trace": "measured-s997.jsonl",
+    "sha256": "5350326e69ba01d78e00befe04a63fdd39ddf7750620ff0fb93d01f52e22680e"
+  }
+]

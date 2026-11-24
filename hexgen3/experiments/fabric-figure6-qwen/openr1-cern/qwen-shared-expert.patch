@@ -1,0 +1,18 @@
+--- a/runtime/python/sglang/srt/models/qwen2_moe.py
++++ b/runtime/python/sglang/srt/models/qwen2_moe.py
+@@ -720,5 +720,7 @@ class Qwen2MoeForCausalLM(nn.Module):
+-        if afd_perspective == AFDPerspective.AFD_PERSPECTIVE_FFN:
+-            stacked_params_mapping = []
+-        else:
+-            stacked_params_mapping = [
+-                # (param_name, shard_name, shard_id)
++        # The FFN role still owns the shared expert's merged gate and up weights.
++        stacked_params_mapping = [
++            ("gate_up_proj", "gate_proj", 0),
++            ("gate_up_proj", "up_proj", 1),
++        ]
++        if afd_perspective != AFDPerspective.AFD_PERSPECTIVE_FFN:
++            stacked_params_mapping[:0] = [
+@@ -728,2 +729,0 @@ class Qwen2MoeForCausalLM(nn.Module):
+-                ("gate_up_proj", "gate_proj", 0),
+-                ("gate_up_proj", "up_proj", 1),

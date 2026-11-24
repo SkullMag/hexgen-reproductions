@@ -1,3 +1,5 @@
 # HexGen‑3
 
-Add the pinned source revision, reproduction instructions, and experiment protocols here when HexGen‑3 work begins.
+The starting runtime revision is [Relaxed-System-Lab/HexGen-3 at `efa3ed9`](https://github.com/Relaxed-System-Lab/HexGen-3/tree/efa3ed99e4337e5443f5fe4ee8c2fb2c29076de7).
+
+- [Figure 6 FABRIC protocol](experiments/fabric-figure6-qwen/) compares HexGen‑2 and HexGen‑3 with the same Qwen checkpoint on a fixed heterogeneous GPU pool.

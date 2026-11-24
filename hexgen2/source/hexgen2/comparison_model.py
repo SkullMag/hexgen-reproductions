@@ -32,6 +32,7 @@ class State:
 class NativeStage(nn.Module):
     def __init__(self,model_dir,stage,system,baseline_root=None,max_batch=1):
         super().__init__()
+        self.device, self.dtype = torch.device('cuda'), torch.float16
         self.directory=Path(model_dir);self.stage=stage;self.audit_directory=None;self.audit_context=None;self.audit_sequence=0
         self.hf=LlamaConfig.from_pretrained(model_dir,local_files_only=True)
         if self.hf.model_type!='llama' or self.hf.rope_scaling is not None or self.hf.num_hidden_layers%2:
@@ -133,14 +134,14 @@ class NativeStage(nn.Module):
         # first-token reads on the compute stream must finish before reuse.
         for tensor in tensors.values():
             if tensor.is_cuda:tensor.record_stream(torch.cuda.current_stream())
-        first=tensors.pop('first').to(device='cuda');state=State(prompt_length+count,first.numel(),sequence_len_offset=prompt_length)
+        first=tensors.pop('first').to(self.device);state=State(prompt_length+count,first.numel(),sequence_len_offset=prompt_length)
         expected=set(map(str,range(self.start,self.stop)))
         if set(tensors)!=expected:raise ValueError('Transferred cache layer ownership mismatch')
         for key in sorted(tensors,key=int):
             live=tensors.pop(key)
             shape=(first.numel(),prompt_length,2,self.hf.num_key_value_heads,self.hf.hidden_size//self.hf.num_attention_heads)
-            if tuple(live.shape)!=shape or live.dtype!=torch.float16:raise ValueError('Invalid live KV shape or dtype')
-            full=torch.empty((first.numel(),state.max_sequence_len,*live.shape[2:]),device='cuda',dtype=torch.float16)
+            if tuple(live.shape)!=shape or live.dtype!=self.dtype:raise ValueError('Invalid live KV shape or dtype')
+            full=torch.empty((first.numel(),state.max_sequence_len,*live.shape[2:]),device=self.device,dtype=self.dtype)
             full[:,:prompt_length].copy_(live);state.key_value_memory_dict[int(key)]=full
             del live
         return first,state

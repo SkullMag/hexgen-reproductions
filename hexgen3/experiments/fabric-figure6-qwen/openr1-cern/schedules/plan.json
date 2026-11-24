@@ -1,0 +1,182 @@
+[
+  {
+    "run": "openr1-r085-s061",
+    "rate": 0.01242418,
+    "multiplier": 0.85,
+    "seed": 61,
+    "duration": 480,
+    "offered": 7,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r050-s061",
+    "rate": 0.00730834,
+    "multiplier": 0.5,
+    "seed": 61,
+    "duration": 240,
+    "offered": 2,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r100-s061",
+    "rate": 0.01461668,
+    "multiplier": 1.0,
+    "seed": 61,
+    "duration": 240,
+    "offered": 3,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r110-s061",
+    "rate": 0.01607834,
+    "multiplier": 1.1,
+    "seed": 61,
+    "duration": 240,
+    "offered": 4,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r140-s061",
+    "rate": 0.02046335,
+    "multiplier": 1.4,
+    "seed": 61,
+    "duration": 240,
+    "offered": 5,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r085-s305",
+    "rate": 0.01242418,
+    "multiplier": 0.85,
+    "seed": 305,
+    "duration": 480,
+    "offered": 8,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r050-s305",
+    "rate": 0.00730834,
+    "multiplier": 0.5,
+    "seed": 305,
+    "duration": 240,
+    "offered": 2,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r100-s305",
+    "rate": 0.01461668,
+    "multiplier": 1.0,
+    "seed": 305,
+    "duration": 240,
+    "offered": 5,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r110-s305",
+    "rate": 0.01607834,
+    "multiplier": 1.1,
+    "seed": 305,
+    "duration": 240,
+    "offered": 5,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r140-s305",
+    "rate": 0.02046335,
+    "multiplier": 1.4,
+    "seed": 305,
+    "duration": 240,
+    "offered": 6,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r085-s997",
+    "rate": 0.01242418,
+    "multiplier": 0.85,
+    "seed": 997,
+    "duration": 480,
+    "offered": 12,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r050-s997",
+    "rate": 0.00730834,
+    "multiplier": 0.5,
+    "seed": 997,
+    "duration": 240,
+    "offered": 4,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r100-s997",
+    "rate": 0.01461668,
+    "multiplier": 1.0,
+    "seed": 997,
+    "duration": 240,
+    "offered": 9,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  },
+  {
+    "run": "openr1-r110-s997",
+    "rate": 0.01607834,
+    "multiplier": 1.1,
+    "seed": 997,
+    "duration": 240,
+    "offered": 9,
+    "order": [
+      "hexgen3",
+      "hexgen2"
+    ]
+  },
+  {
+    "run": "openr1-r140-s997",
+    "rate": 0.02046335,
+    "multiplier": 1.4,
+    "seed": 997,
+    "duration": 240,
+    "offered": 10,
+    "order": [
+      "hexgen2",
+      "hexgen3"
+    ]
+  }
+]

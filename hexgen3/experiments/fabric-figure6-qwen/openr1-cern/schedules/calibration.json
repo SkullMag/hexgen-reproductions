@@ -1,0 +1,11 @@
+{
+  "pilot_run": "h2-openr1-calibration",
+  "completion_offsets_before_first_timeout_seconds": [
+    68.68530295400001,
+    137.27346126999987,
+    205.51530905299978
+  ],
+  "median_inter_completion_seconds": 68.41500304949989,
+  "estimated_hexgen2_requests_per_second": 0.014616676977657608,
+  "fixed_window_requests_per_second": 0.00975609756097561
+}

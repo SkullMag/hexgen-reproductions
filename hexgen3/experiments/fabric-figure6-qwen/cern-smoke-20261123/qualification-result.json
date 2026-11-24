@@ -1,0 +1,22 @@
+{
+  "device": "cuda",
+  "backend": "nccl",
+  "requests": [
+    {
+      "id": "one-token",
+      "matched": true,
+      "output_tokens": 1
+    },
+    {
+      "id": "multi-token",
+      "matched": true,
+      "output_tokens": 8
+    },
+    {
+      "id": "longer-prompt",
+      "matched": true,
+      "output_tokens": 16
+    }
+  ],
+  "passed": true
+}
